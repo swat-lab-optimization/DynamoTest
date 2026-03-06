@@ -1,7 +1,4 @@
-import numpy as np
 from agents.abstract_agent import AbstractAgent
-from typing import List
-from mabwiser.mab import MAB, LearningPolicy
 import json
 
 class FileAgent(AbstractAgent):

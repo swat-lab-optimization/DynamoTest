@@ -1,6 +1,5 @@
 import gymnasium as gym
-from gymnasium.wrappers import RecordVideo
-from stable_baselines3 import PPO, DQN
+from stable_baselines3 import DQN
 
 import highway_env  # noqa: F401
 import numpy as np
@@ -8,26 +7,17 @@ from gymnasium.envs.registration import register
 import json
 
 import tyro
-from adversrial_policies.deepq_policy import DeepQModel
-from adversrial_policies.master_policy import MasterPolicy
-from adversrial_policies.approach_policy import ApproachPolicy
-from adversrial_policies.approach_policy_dqn import ApproachPolicyDQN
-from adversrial_policies.change_lane import ChangeLanePolicy
-from adversrial_policies.change_lane_dqn import ChangeLanePolicyDQN
-from adversrial_policies.idm_policy import IdmPolicy
 from datetime import datetime
-from adversrial_policies.follow_policy import FollowPolicyPID
-from rl_agents.agents.common.factory import agent_factory, load_agent_config, load_agent
+from rl_agents.agents.common.factory import agent_factory, load_agent_config
 import os
 from common.utils import StatRecorder
 from agents.dqn_agent_cleanrl import Args, DQNAgentCLRL
-from envs.highway_env_adv import HighwayEnvAdversary
 from agents.cmab_agent import CMabModel
-from mabwiser.mab import MAB, LearningPolicy
+from mabwiser.mab import LearningPolicy
 from agents.random_agent import RandomAgent
 import shutil
 TRAIN = True
-from ga.test_generator import GATester, GAInitTester
+from ga.test_generator import GAInitTester
 
 config_adv = {
     "controlled_vehicles": 2,
@@ -269,6 +259,6 @@ if __name__ == "__main__":
             env.close()
             generated_tests, res = tester.get_results()
             all_tests[f"run{run}"] = generated_tests
-            save_path = os.path.join(stats_folder, f"search_stats.json")
+            save_path = os.path.join(stats_folder, "search_stats.json")
             with open(save_path, "w") as f:
                 json.dump(all_tests, f, indent=4)

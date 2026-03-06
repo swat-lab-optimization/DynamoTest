@@ -12,17 +12,13 @@ import json
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import sys
-from typing import List, Tuple, Dict, Any
+from typing import List
 import logging as log
-from scipy.stats import mannwhitneyu, wilcoxon
+from scipy.stats import mannwhitneyu
 
 from matplotlib.ticker import MaxNLocator
 from common.cliffsDelta import cliffsDelta
-import time
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.cluster import DBSCAN, HDBSCAN
-import numpy as np
 
 from sklearn.neighbors import kneighbors_graph
 from common.novelty_clustering import find_clusters, get_distance_matrix
@@ -30,7 +26,6 @@ import igraph as ig
 import leidenalg
 import Levenshtein
 from sklearn.manifold import TSNE
-from sklearn.preprocessing import MinMaxScaler
 
 
 def plot_clusters(tests, labels, out_root, save_name, title='t-SNE visualization of clusters'):

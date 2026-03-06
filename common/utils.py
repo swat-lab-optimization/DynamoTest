@@ -3,10 +3,8 @@ from pathlib import Path
 
 from gymnasium.wrappers import RecordVideo
 from IPython import display as ipythondisplay
-from pyvirtualdisplay import Display
 import json
 import os
-import shutil
 import csv
 
 # display = Display(visible=0, size=(1400, 900))

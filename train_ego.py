@@ -1,10 +1,8 @@
 import gymnasium as gym
-from gymnasium.wrappers import RecordVideo
-from stable_baselines3 import PPO, DQN
+from stable_baselines3 import DQN
 import os
 import highway_env  # noqa: F401
 from stable_baselines3.common.callbacks import BaseCallback
-import numpy as np
 from stable_baselines3.common.callbacks import CheckpointCallback
 
 # highway_env._register_highway_envs()

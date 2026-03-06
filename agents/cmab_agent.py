@@ -2,7 +2,6 @@ import numpy as np
 from agents.abstract_agent import AbstractAgent
 from typing import List
 from mabwiser.mab import MAB, LearningPolicy
-import json
 import pickle
 
 class CMabModel(AbstractAgent):

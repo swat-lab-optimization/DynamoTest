@@ -1,6 +1,5 @@
 
 
-import numpy as np
 class TraceAnalyzer:
     def __init__(self, max_duration=40):
         #self.trace_dict = trace_dict

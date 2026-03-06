@@ -1,10 +1,8 @@
-from gymnasium.wrappers import RecordVideo
-from stable_baselines3 import DQN, PPO
+from stable_baselines3 import DQN
 import gymnasium as gym
 import highway_env  # noqa: F401
 
 # from adversarial_behavior_mab_old import AdversarialVehicle
-from highway_env.vehicle.controller import ControlledVehicle
 
 config = {
     "observation": {

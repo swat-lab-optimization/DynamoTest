@@ -1,29 +1,18 @@
 import gymnasium as gym
-from gymnasium.wrappers import RecordVideo
-from stable_baselines3 import PPO, DQN
+from stable_baselines3 import DQN
 
 import highway_env  # noqa: F401
 import numpy as np
 from gymnasium.envs.registration import register
-import json
 
 import tyro
-from adversrial_policies.deepq_policy import DeepQModel
-from adversrial_policies.master_policy import MasterPolicy
-from adversrial_policies.approach_policy import ApproachPolicy
-from adversrial_policies.approach_policy_dqn import ApproachPolicyDQN
-from adversrial_policies.change_lane import ChangeLanePolicy
-from adversrial_policies.change_lane_dqn import ChangeLanePolicyDQN
-from adversrial_policies.idm_policy import IdmPolicy
 from datetime import datetime
-from adversrial_policies.follow_policy import FollowPolicyPID
-from rl_agents.agents.common.factory import agent_factory, load_agent_config, load_agent
+from rl_agents.agents.common.factory import agent_factory, load_agent_config
 import os
 from common.utils import StatRecorder
 from agents.dqn_agent_cleanrl import Args, DQNAgentCLRL
-from envs.highway_env_adv import HighwayEnvAdversary
 from agents.cmab_agent import CMabModel
-from mabwiser.mab import MAB, LearningPolicy
+from mabwiser.mab import LearningPolicy
 from agents.random_agent import RandomAgent
 import shutil
 
@@ -174,7 +163,7 @@ if __name__ == "__main__":
             else:
 
                 model_ego = DQN.load(
-                    f"models\\model_ego_dqn_01_05_25_defensive.zip", env=env_ego #"models\\model_ego_dqn_26_05_25_aggressive_5.zip" models\model_ego_dqn_01_05_25_defensive.zip
+                    "models\\model_ego_dqn_01_05_25_defensive.zip", env=env_ego #"models\\model_ego_dqn_26_05_25_aggressive_5.zip" models\model_ego_dqn_01_05_25_defensive.zip
                 )
                 
         #     model_ego = DQN.load(

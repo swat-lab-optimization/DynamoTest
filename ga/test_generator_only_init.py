@@ -1,7 +1,6 @@
 from ambiegen.testers.abstract_evolutionary_tester_ask_tell import AbstractEvolutionaryTesterAskTell
 from ambiegen.generators.abstract_generator import AbstractGenerator
 
-from pymoo.operators.sampling.rnd import PermutationRandomSampling
 import numpy as np
 import yaml
 import random

@@ -1,4 +1,3 @@
-from dtaidistance import dtw_ndim
 import numpy as np
 from scipy.spatial.distance import directed_hausdorff
 

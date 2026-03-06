@@ -1,5 +1,4 @@
 import gymnasium as gym
-import numpy as np
 from agents.abstract_agent import AbstractAgent
 
 def make_env(env_id, seed, idx, capture_video, run_name):

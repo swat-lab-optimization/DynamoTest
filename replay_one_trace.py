@@ -1,60 +1,24 @@
 import gymnasium as gym
 from gymnasium.wrappers import RecordVideo
-from stable_baselines3 import PPO, DQN
 from gymnasium.envs.registration import register
 import highway_env  # noqa: F401
 import numpy as np
 import json
-from adversrial_policies.deepq_policy import DeepQModel
-from adversrial_policies.master_policy import MasterPolicy
-from adversrial_policies.approach_policy import ApproachPolicy
-from adversrial_policies.approach_policy_dqn import ApproachPolicyDQN
-from adversrial_policies.approach_policy_pid import ApproachPolicyPID
-from adversrial_policies.follow_policy import FollowPolicyPID
-from adversrial_policies.change_lane import ChangeLanePolicy
-from adversrial_policies.change_lane_dqn import ChangeLanePolicyDQN
 from datetime import datetime
-from adversrial_policies.master_policy_HRL import MasterPolicyHRL, MasterPolicyHRLRandom
-import os
 from common.utils import StatRecorder
 from common.tracers import CutInTracer
-from common.behavior_evaluator import BehaviorEvaluator
-from common.run_evaluator import RunEvaluator
 
 from agents.file_agent import FileAgent
-from adversrial_policies.change_lane_left import ChangeLaneLeftPolicy
-from adversrial_policies.change_lane_right import ChangeLaneRightPolicy
-from adversrial_policies.accelerate import AcceleratePolicy
-from adversrial_policies.brake import BrakePolicy
-from datetime import datetime
-import time
 from common.tracer_monitor import TracerMonitor
 from common.trace_analyzer import TraceAnalyzer
 import sys
 from common.trace_recorder import TraceRecorder
 from envs.highway_env_adv import HighwayEnvAdversary
 from common.tracers import (
-    FrontSameLaneTracer, CutOutTracer, # 1
-    FrontSameLaneTracer, FrontSlowDownSameLaneTracer,
+    CutOutTracer, # 1
+    FrontSlowDownSameLaneTracer,
 
-    BehindSameLaneTracer, BehindSpeedUpTracer, # 2
-
-    FrontDifferentLaneTracer, CutInTracer, # 3 ego lane 0
-    FrontDifferentLaneTracer, FrontSlowDownDifferentLaneTracer, # ego lane 0
-
-    SideTracer, CutInTracer, # 4 ego lane 0
-
-    BehindDifferentLaneTracer, CutInTracer, # 5 ego lane 0
-    BehindDifferentLaneTracer, BehindSpeedUpTracer, #ego lane 0
-
-    FrontDifferentLaneTracer, FrontSlowDownDifferentLaneTracer, # 6 ego lane 1
-    FrontDifferentLaneTracer, CutInTracer, # ego lane 1
-
-    SideTracer, CutInTracer, # 7 ego lane 1
-
-    BehindDifferentLaneTracer, CutInTracer, # 8 ego lane 1
-    BehindDifferentLaneTracer, BehindSpeedUpTracer, #ego lane 1
-
+    FrontSlowDownDifferentLaneTracer, # 6 ego lane 1
     CutInSideTracer, 
     EgoCutInTracer,
     EgoCutInSideTracer,
@@ -243,7 +207,7 @@ if __name__ == "__main__":
         print(f"Adv lane index {env.unwrapped.controlled_vehicles[1].lane_index[2]}, Ego lane index {env.unwrapped.controlled_vehicles[0].lane_index[2]}")
         print(f"Adv heading {env.unwrapped.controlled_vehicles[1].heading}, Ego heading {env.unwrapped.controlled_vehicles[0].heading}")
         print(f"Adv - ego distance {env.unwrapped.controlled_vehicles[1].position[0] - env.unwrapped.controlled_vehicles[0].position[0]}, step: {step}")
-        print(f"--------------------------------------------------------")
+        print("--------------------------------------------------------")
         #tracer_monitor.monitor_step(tracer.input_trace)
         #trace_recorder.update_trace(ego_veh=env.unwrapped.controlled_vehicles[0], ego_action=action[0], adv_veh=env.unwrapped.controlled_vehicles[1], adv_action=action[1])
         #video_annotator.update_trace(ego_veh=env.unwrapped.controlled_vehicles[0], ego_action=action[0], adv_veh=env.unwrapped.controlled_vehicles[1], adv_action=action[1])

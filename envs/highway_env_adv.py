@@ -4,9 +4,7 @@ import numpy as np
 import math
 import json
 from highway_env import utils
-from highway_env.envs.common.abstract import AbstractEnv
 from highway_env.envs.common.action import Action
-from highway_env.road.road import Road, RoadNetwork
 from highway_env.utils import near_split
 from highway_env.vehicle.controller import ControlledVehicle
 from highway_env.vehicle.kinematics import Vehicle
@@ -14,32 +12,10 @@ from common.tracer_monitor import TracerMonitor
 import copy
 import random
 from common.tracers import (
-    FrontSameLaneTracer,
     CutOutTracer,  # 1
-    FrontSameLaneTracer,
     FrontSlowDownSameLaneTracer,
-    BehindSameLaneTracer,
-    BehindSpeedUpTracer,  # 2
-    FrontDifferentLaneTracer,
-    CutInTracer,  # 3 ego lane 0
-    FrontDifferentLaneTracer,
-    FrontSlowDownDifferentLaneTracer,  # ego lane 0
-    SideTracer,
-    CutInTracer,  # 4 ego lane 0
-    BehindDifferentLaneTracer,
-    CutInTracer,  # 5 ego lane 0
-    BehindDifferentLaneTracer,
-    BehindSpeedUpTracer,  # ego lane 0
-    FrontDifferentLaneTracer,
     FrontSlowDownDifferentLaneTracer,  # 6 ego lane 1
-    FrontDifferentLaneTracer,
-    CutInTracer,  # ego lane 1
-    SideTracer,
-    CutInTracer,  # 7 ego lane 1
-    BehindDifferentLaneTracer,
     CutInTracer,  # 8 ego lane 1
-    BehindDifferentLaneTracer,
-    BehindSpeedUpTracer,  # ego lane 1
     CutInSideTracer,
     EgoCutInTracer,
     EgoCutInSideTracer,
