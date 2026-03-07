@@ -29,14 +29,14 @@ class TracerMonitor:
             tracer_list: Concrete `AbstractSignalTracer` instances to run.
         """
         self.tracers = tracer_list
-        self._trace_index = 0  # reserved; not used in current logic
+        self._trace_index = 0  
         self._step = 0
-        self.tracer_dict = {}  # step -> {tracer_name: bool}
-        self.global_tracer_dict = {}  # tracer_name -> bool for episode summary
+        self.tracer_dict = {}  
+        self.global_tracer_dict = {}  
         self.positive_flag = False
         self.positive_tracer_names = []
         self.global_positive_tracer_names = []
-        self.all_trace = {}  # optional storage for raw inputs (unused here)
+        self.all_trace = {} 
         self.episode = 0
 
     def monitor_step(self, input_trace):
@@ -79,10 +79,6 @@ class TracerMonitor:
                         rob = rob / 10  # scale reward for step-wise use
                         if tracer.name not in self.positive_tracer_names:
                             self.positive_tracer_names.append(tracer.name)
-
-                        print(
-                            f"Positive tracer names (local): {self.positive_tracer_names}"
-                        )
                     # Ego cut event: check ego lane change magnitude
                     elif (
                         "Ego" in tracer.name
@@ -95,9 +91,6 @@ class TracerMonitor:
                         rob = rob / 10
                         if tracer.name not in self.positive_tracer_names:
                             self.positive_tracer_names.append(tracer.name)
-                        print(
-                            f"Positive tracer names (local): {self.positive_tracer_names}"
-                        )
                 elif "FrontSlowDownSameLaneTracer" in tracer.name:
                     # Either the vehicle ahead slowed down, or ego is faster
                     # after a cut-in event was detected recently
@@ -153,7 +146,6 @@ class TracerMonitor:
                 self.global_tracer_dict[tracer.name] = True
                 self.global_positive_tracer_names.append(tracer.name)
 
-        print(f"Positive tracer names (global): {self.global_positive_tracer_names}")
         return rob
 
     def reset(self):

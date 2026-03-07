@@ -7,9 +7,6 @@ import json
 import os
 import csv
 
-# display = Display(visible=0, size=(1400, 900))
-# display.start()
-
 
 def record_videos(env, video_folder="videos"):
     wrapped = RecordVideo(

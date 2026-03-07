@@ -126,13 +126,10 @@ class AbstractSignalTracer(ABC):
         """
         if self.spec is None:
             raise ValueError("Specification not initialized.")
-        trace_list = [[k, v] for k, v in input_trace.items()]
 
         return self.spec.evaluate(input_trace)
 
-    def evaluate(
-        self, input_trace: Dict[str, List[Tuple[float, float]]]
-    ) -> float:
+    def evaluate(self, input_trace: Dict[str, List[Tuple[float, float]]]) -> float:
         """Evaluate the specification by iterating over a provided trace.
 
         This helper feeds each time step to the monitor and returns the maximum
@@ -150,7 +147,6 @@ class AbstractSignalTracer(ABC):
         """
         if self.spec is None:
             raise ValueError("Specification not initialized.")
-        trace_list = [(k, v) for k, v in input_trace.items()]
         rob_list = []
         for i in range(len(input_trace["adv_x"])):
             rob = self.spec.update(
@@ -171,9 +167,7 @@ class AbstractSignalTracer(ABC):
 
         return rob
 
-    def evaluate_step(
-        self, input_trace: Dict[str, List[float]]
-    ) -> float:
+    def evaluate_step(self, input_trace: Dict[str, List[float]]) -> float:
         """Evaluate the specification for the latest time step.
 
         Feeds the most recent sample from `input_trace` to the monitor and
@@ -200,11 +194,8 @@ class AbstractSignalTracer(ABC):
         except Exception as e:
             print(f"Error updating specification: {e}")
             rob = -1
-        rob = np.clip(rob, -100, 100)  # Limit robustness value to a maximum of 20
+        rob = np.clip(rob, -100, 100)  # Limit robustness value to a maximum of 100
         if rob >= 0:
-            print(
-                f"Positive robustness value update: {rob} at time step {self.time} for {self.name}"
-            )
             rob *= 2
             if rob == 0:
                 rob = 2
@@ -250,12 +241,12 @@ class AbstractSignalTracer(ABC):
             self.input_trace["adv_lane_id"].append(int(adv_veh.lane_index[2]))
             self.input_trace["adv_heading"].append(float(adv_veh.heading))
 
-
         self.current_time_step += 1
 
 
 class SameSpeedEgoTracer(AbstractSignalTracer):
     """Tracer configured to detect near-constant ego speed behavior."""
+
     def __init__(self, sampling_period: float = 0.2, d_safe: float = 30.0):
         self.d_safe = d_safe
         self.lane_tol = 1
@@ -269,11 +260,12 @@ class SameSpeedEgoTracer(AbstractSignalTracer):
         """Assign the STL formula that captures stable ego speed."""
         self.spec.spec = """
            rob = always[0:10](  (prev ego_speed - ego_speed < 0.2) and (prev ego_speed - ego_speed > 0 ) )
-        """  # and adv_x > ego_x
+        """
 
 
 class CutInTracer(AbstractSignalTracer):
     """Tracer for detecting when another vehicle merges into the ego lane ahead."""
+
     def __init__(self, sampling_period: float = 0.2, d_safe: float = 30.0):
         self.d_safe = d_safe
         self.lane_tol = 1
@@ -292,11 +284,12 @@ class CutInTracer(AbstractSignalTracer):
            (abs(adv_lane - ego_lane) <= {self.lane_tol} )
             and ((adv_x - ego_x) < {self.d_safe} )
             and (adv_x > ego_x + 5)  )
-            """  # and adv_x > ego_x
+            """
 
 
 class EgoCutInTracer(AbstractSignalTracer):
     """Tracer for detecting when the ego vehicle merges into another lane ahead."""
+
     def __init__(self, sampling_period: float = 0.2, d_safe: float = 30.0):
         self.d_safe = d_safe
         self.lane_tol = 1
@@ -314,11 +307,12 @@ class EgoCutInTracer(AbstractSignalTracer):
            (abs(adv_lane - ego_lane) < {self.lane_tol} )
            and ((adv_x - ego_x) < {self.d_safe} )
            and (adv_x > ego_x)  )
-        """  # and adv_x > ego_x
+        """
 
 
 class CutInSideTracer(AbstractSignalTracer):
     """Tracer for detecting merges resulting in side-by-side positioning."""
+
     def __init__(self, sampling_period: float = 0.2, d_safe: float = 30.0):
         self.d_safe = d_safe
         self.lane_tol = 1
@@ -336,11 +330,12 @@ class CutInSideTracer(AbstractSignalTracer):
            (abs(adv_lane - ego_lane) < {self.lane_tol} )
            and ((adv_x - ego_x) < {self.d_safe} )
            and (adv_x < ego_x+5) and (adv_x - ego_x > -10) )
-        """  # and adv_x > ego_x
+        """
 
 
 class EgoCutInSideTracer(AbstractSignalTracer):
     """Tracer for detecting ego merges that end side-by-side with another vehicle."""
+
     def __init__(self, sampling_period: float = 0.2, d_safe: float = 30.0):
         self.d_safe = d_safe
         self.lane_tol = 1
@@ -358,11 +353,12 @@ class EgoCutInSideTracer(AbstractSignalTracer):
            (abs(adv_lane - ego_lane) < {self.lane_tol} )
            and ((adv_x - ego_x) < {self.d_safe} )
            and (adv_x < ego_x) and (ego_x - adv_x < 10)  )
-        """  # and adv_x > ego_x
+        """
 
 
 class CutOutTracer(AbstractSignalTracer):
     """Tracer for detecting lane departures from the ego lane ahead."""
+
     def __init__(self, sampling_period: float = 0.2, d_safe: float = 30.0):
         self.d_safe = d_safe
         self.lane_tol = 1
@@ -384,6 +380,7 @@ class CutOutTracer(AbstractSignalTracer):
 
 class EgoCutOutTracer(AbstractSignalTracer):
     """Tracer for detecting when the ego vehicle leaves its lane near another vehicle."""
+
     def __init__(self, sampling_period: float = 0.2, d_safe: float = 30.0):
         self.d_safe = d_safe
         self.lane_tol = 1
@@ -405,6 +402,7 @@ class EgoCutOutTracer(AbstractSignalTracer):
 
 class BehindSpeedUpTracer(AbstractSignalTracer):
     """Tracer for detecting closing gaps behind the ego vehicle."""
+
     def __init__(self, sampling_period: float = 0.2, d_safe: float = 20.0):
         self.d_safe = d_safe
         super().__init__(sampling_period)
@@ -426,6 +424,7 @@ class BehindSpeedUpTracer(AbstractSignalTracer):
 
 class FrontSlowDownSameLaneTracer(AbstractSignalTracer):
     """Tracer for detecting slowdowns ahead in the same lane."""
+
     def __init__(self, sampling_period: float = 0.2, d_safe: float = 40.0):
         self.d_safe = d_safe
         self.lane_tol = 1
@@ -444,11 +443,11 @@ class FrontSlowDownSameLaneTracer(AbstractSignalTracer):
             and ((adv_x - ego_x) > 2) and  (prev adv_speed > adv_speed ) ))
             )
         """
-        # and (prev(adv_x) < adv_x)
 
 
 class FrontSlowDownDifferentLaneTracer(AbstractSignalTracer):
     """Tracer for detecting slowdowns ahead in a different lane."""
+
     def __init__(self, sampling_period: float = 0.2, d_safe: float = 40.0):
         self.d_safe = d_safe
         self.lane_tol = 1
@@ -471,6 +470,7 @@ class FrontSlowDownDifferentLaneTracer(AbstractSignalTracer):
 
 class BehindSameLaneTracer(AbstractSignalTracer):
     """Tracer for detecting vehicles following closely in the same lane."""
+
     def __init__(self, sampling_period: float = 0.2, d_safe: float = 15.0):
         self.d_safe = d_safe
         self.lane_tol = 1
@@ -488,11 +488,11 @@ class BehindSameLaneTracer(AbstractSignalTracer):
             and abs(adv_x - ego_x) < {self.d_safe} 
             and adv_x < ego_x ) ) )
         """
-        #
 
 
 class BehindDifferentLaneTracer(AbstractSignalTracer):
     """Tracer for detecting vehicles following closely in a different lane."""
+
     def __init__(self, sampling_period: float = 0.2, d_safe: float = 15.0):
         self.d_safe = d_safe
         self.lane_tol = 1
@@ -514,6 +514,7 @@ class BehindDifferentLaneTracer(AbstractSignalTracer):
 
 class FrontSameLaneTracer(AbstractSignalTracer):
     """Tracer for detecting a vehicle ahead within a distance in the same lane."""
+
     def __init__(self, sampling_period: float = 0.2, d_safe: float = 30.0):
         self.d_safe = d_safe
         self.lane_tol = 1
@@ -535,6 +536,7 @@ class FrontSameLaneTracer(AbstractSignalTracer):
 
 class FrontDifferentLaneTracer(AbstractSignalTracer):
     """Tracer for detecting a vehicle ahead within a distance in another lane."""
+
     def __init__(self, sampling_period: float = 0.2, d_safe: float = 30.0):
         self.d_safe = d_safe
         self.lane_tol = 1
@@ -552,11 +554,11 @@ class FrontDifferentLaneTracer(AbstractSignalTracer):
             and abs(adv_x - ego_x) < {self.d_safe} 
             and (adv_x - ego_x > 2)      ) ) ) 
         """
-        # and prev(adv_x) == adv_x
 
 
 class SideTracer(AbstractSignalTracer):
     """Tracer for detecting side-by-side proximity in adjacent lanes."""
+
     def __init__(self, sampling_period: float = 0.2, d_safe: float = 5):
         self.d_safe = d_safe
         self.lane_tol = 1

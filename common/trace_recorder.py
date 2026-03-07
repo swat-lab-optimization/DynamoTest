@@ -7,7 +7,7 @@ class TraceRecorder:
     def __init__(self, save_folder: str, episode: int = 0):
         self.save_folder = save_folder
         self.all_frames_dict= {}
-        self.current_frame_dict = {}#{"ego_x": None, "ego_lane": None, "ego_action": None, "adv_x": None, "adv_lane": None, "adv_action": None}
+        self.current_frame_dict = {}
         self.current_frame = 0
         self.episode = episode  # Not used in this class, but can be useful for tracking episodes if needed
 
@@ -92,6 +92,6 @@ class TraceRecorder:
         Reset the current frame and episode.
         """
         self.all_frames_dict= {}
-        self.current_frame_dict = {}#{"ego_x": None, "ego_lane": None, "ego_action": None, "adv_x": None, "adv_lane": None, "adv_action": None}
+        self.current_frame_dict = {}
         self.current_frame = 0
         self.episode += 1
