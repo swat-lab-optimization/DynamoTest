@@ -30,32 +30,12 @@ python -m venv .venv
 pip install -r requirement.txt
 ```
 ```
-pip install gymnasium==0.29.0 tyro mabwiser
+pip install gymnasium==0.29.0 tyro
 ```
 
 3) Install PyTorch per your platform (CPU/GPU):
 - See https://pytorch.org for the correct command (CUDA/CPU).
 
-4) Install `rl-agents` (from the Highway‑Env repository):
-```
-pip install "git+https://github.com/eleurent/highway-env#subdirectory=rl_agents"
-```
-
-5) Verify the custom env is reachable:
-- The script registers id `highwayadv-v0` pointing to `envs/highway_env_adv.py`.
-- Ensure `envs/highway_env_adv.py` exists and is importable from the repo root.
-
-## Repository Layout
-- `train_adversary.py` — Main script to run adversarial training/evaluation.
-- `envs/highway_env_adv.py` — Custom adversarial environment wrapper.
-- `agents/`
-  - `dqn_agent_cleanrl.py` — DQN adversary (CleanRL‑style).
-  - `sac_agent_cleanrl.py` — SAC adversary (CleanRL‑style).
-  - `cmab_agent.py` — Contextual multi‑armed bandit adversary.
-  - `random_agent.py` — Random policy adversary.
-- `ga/test_generator.py` — GA‑based adversarial test generator.
-- `common/utils.py` — `StatRecorder` and utilities.
-- `models/`, `out/` — Locations referenced for ego‑agent configs/checkpoints.
 
 ## Quick Start: Run `train_adversary.py`
 Defaults inside the script:
