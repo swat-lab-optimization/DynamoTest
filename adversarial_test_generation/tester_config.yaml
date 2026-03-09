@@ -1,13 +1,12 @@
-tester: search_based  # or 'fuzzing', 'bayesian_optimization', etc.
-
+tester: search_based  # 
 common:
   seed: None
   termination: "n_gen"
   budget: 5000
 
 search_based:
-  pop_size: 100 #100 #50 #50 #200 #200
-  n_offspring: 100 #100 #25 #50 # 200 #200
+  pop_size: 100 
+  n_offspring: 100 
   algorithm: "ga"
   crossover: "sbx"
   mutation: "pm"

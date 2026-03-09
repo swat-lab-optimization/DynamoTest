@@ -5,7 +5,7 @@ or over full episodes, tracking which tracers reported positive robustness and
 providing lightweight bookkeeping across steps and episodes.
 """
 
-from common.tracers import AbstractSignalTracer
+from dynasto.common.tracers import AbstractSignalTracer
 
 
 class TracerMonitor:
@@ -106,18 +106,12 @@ class TracerMonitor:
                         rob = rob / 10
                         if tracer.name not in self.positive_tracer_names:
                             self.positive_tracer_names.append(tracer.name)
-                        print(
-                            f"Positive tracer names (local): {self.positive_tracer_names}"
-                        )
                 else:
                     # Default path: positive monitor result marks this step
                     self.tracer_dict[self._step][tracer.name] = True
                     rob = rob / 10
                     if tracer.name not in self.positive_tracer_names:
                         self.positive_tracer_names.append(tracer.name)
-                    print(
-                        f"Positive tracer names (local): {self.positive_tracer_names}"
-                    )
 
         # Advance to next step for subsequent calls
         self._step += 1
@@ -141,7 +135,6 @@ class TracerMonitor:
             rob = -1
             rob = tracer.evaluate(input_trace)
             if rob >= 0:
-                print(f"Tracer {tracer.name} evaluated with reward: {rob}")
                 self.global_tracer_dict[tracer.name] = True
                 self.global_positive_tracer_names.append(tracer.name)
 
@@ -171,4 +164,3 @@ class TracerMonitor:
 
         with open(filepath, "w") as f:
             json.dump(self.tracer_dict, f, indent=4)
-        print(f"Tracer monitor saved to {filepath}")

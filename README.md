@@ -1,103 +1,106 @@
-# DynamoTest
+# Dynasto
 
-This repository contains the DynamoTest approach and related baselines for generating adversarial traffic scenarios against a pre‑trained “ego” driving agent using Highway‑Env. The main entry point is `train_adversary.py`.
+This repository contains the implementation of the Dynasto approach, described in the paper "Dynasto: Validity-Aware Dynamic–Static Parameter Optimization
+  for Autonomous Driving Testing". This project focuses on training adversarial agents to test autonomous driving policies in a custom multi-agent environment based on [Highway-Env](https://highway-env.farama.org/environments/highway/). The adversaries learn to generate challenging scenarios for various ego agent configurations, with the goal of improving the robustness of autonomous driving systems.
 
-## Highlights
-- Custom multi‑agent environment wrapper registered as `highwayadv-v0`.
-- Multiple adversary strategies: DQN (CleanRL), SAC (CleanRL), Contextual MAB, Random, and GA‑based tester.
-- Per‑run statistics and model checkpoints for reproducibility.
 
-## Requirements
-- Python 3.9–3.11 recommended
-- PyTorch (required by Stable‑Baselines3)
-- Python packages:
-  - `gymnasium`, `highway-env`, `stable-baselines3`, `numpy`
-  - `tyro` (CLI parsing for adversary configs)
-  - `mabwiser` (MAB baseline)
-  - `rl-agents` (for some ego policies loaded via config)
+# Purpose
+This artifact provides the implementation of the Dynasto approach, including adversarial RL-based agent training with further improvement of test sceanrios with a genetic algorithm. This artifact also includes the supporting scripts, such as ego agent training, execution trace analysis, results post processing, and visualization.
+We apply for all the three badges: available, reusable and functional.
+
+**Available.**
+The complete artifact is publicly available and includes all the source code, scripts, configuration files, and instructions required to run the experiments presented in the paper. The repository provides the implementation of the Dynasto approach, including adversarial RL-based agent training, test scenario improvement using a genetic algorithm, and supporting utilities such as ego agent training, execution trace analysis, results post-processing, and visualization.
+
+**Functional.**
+The artifact has been tested to ensure that the provided scripts execute correctly and reproduce the main steps of the experimental pipeline described in the paper. Detailed setup instructions and execution commands are provided to allow evaluators to run the adversarial training process, perform scenario optimization, and generate the corresponding analysis and results.
+
+**Reusable.**
+The artifact is designed to facilitate reuse and extension by other researchers. The codebase is modular, with clearly separated components for reinforcement learning, scenario optimization, and analysis.
+# Setup 
 
 ## Installation
-It is recommended to use a virtual environment.
+It is recommended to use a virtual environment. We recommend using conda for managing the environment, but you can also use venv or any other virtual environment tool. Below are the steps to set up the environment and install the necessary dependencies.
+
+The software has been tested on Python 3.10, and we recommend using this version for compatibility. The software was tested with Windows oprating system, but it should also work on Linux and macOS.
 
 1) Create and activate a venv (example):
-```
-python -m venv .venv
-. .venv/Scripts/activate    # Windows PowerShell: .venv\Scripts\Activate.ps1
+```python
+conda create -n dynasto python=3.10
+conda activate dynasto
 ```
 
 2) Install core dependencies:
+```python
+pip install .
 ```
-pip install -r requirement.txt
-```
-```
-pip install gymnasium==0.29.0 tyro
-```
-
-3) Install PyTorch per your platform (CPU/GPU):
-- See https://pytorch.org for the correct command (CUDA/CPU).
-
-
-## Quick Start: Run `train_adversary.py`
-Defaults inside the script:
-- Episodes: `4005`
-- Runs: `10`
-- Ego types: `["baseline_defensive"]`
-- Adversary algorithm: `"dqn"`
-
-From the repo root:
-```
-python train_adversary.py
+if you plan editing the codebase, you can install the package in editable mode:
+```python
+pip install -e .
 ```
 
-### What gets produced
-- Stats: `stats/final_26_oct_uc2/rl_<date>-<episodes>-<algo>_<ego>_new_uc2_no_novelty/run_<n>/`
-- Weights: `weights/final_26_oct_uc2/rl_<date>-<episodes>-<algo>_<ego>_new_uc2_no_novelty/run_<n>/`
-- For DQN/SAC adversaries, checkpoints are saved every 200 episodes by default.
+3) During the installation Pytorch will be installed. If you want to use Pytorch with GPU, make sure to install the correct version of Pytorch for your system and CUDA version. You can find the appropriate command for your setup on the [PyTorch website](https://pytorch.org/get-started/locally/). No extra installation is needed if you are using CPU.
 
-## Choosing the Adversary
-Set `algo` in `train_adversary.py`:
-- `"dqn"` (default): Uses tyro to parse flags defined in `agents/dqn_agent_cleanrl.py::Args`.
-  - Example additional flags:
-    - `python train_adversary.py --learning-rate 3e-4 --batch-size 256`
-- `"sac"`: Uses flags from `agents/sac_agent_cleanrl.py::ArgsSac`.
-- `"cmab"`: Contextual MAB (`mabwiser`).
-- `"random"`: Random policy.
-- `"ga"`: GA‑based tester (`ga/test_generator.py`) with `tester_config.yaml`.
 
-Note: tyro only parses flags relevant to the selected adversary algorithm.
+## Usage
 
-## Choosing the Ego Agent
-Controlled via `ego_types` in `train_adversary.py`:
-- Options include: `"baseline"`, `"retrain"`, `"aggressive"`, `"baseline_defensive"`, `"robust"`.
-- Some options load an RL‑Agents DQN via `models/dqn.json` + checkpoints in `out/`.
-- Others load SB3 DQN zip files from `models/`.
-- Ensure referenced files exist, or switch `ego_types` to match available assets.
+In this section, we provide instructions on how to use the codebase to train ego agents, adversarial agents, and analyze results. The code is organized into several scripts, each responsible for a specific part of the process.
 
-## Editing Experiment Settings
-In `train_adversary.py`:
-- `EPISODES`: Number of episodes per run.
-- `runs`: Number of independent runs.
-- `algo`: One of `"dqn" | "sac" | "cmab" | "random" | "ga"`.
-- `ego_types`: List of ego setups (e.g., `["baseline_defensive"]`).
-- `save_interval`: Checkpoint cadence (default `200`).
+### Training ego-agents
 
-For DQN/SAC, additional hyperparameters can be passed via CLI flags (handled by tyro through the `Args`/`ArgsSac` dataclasses in the agent files).
+To train an ego agent (the system under test), execute the following command:
 
-## Outputs and Reproducibility
-- Episode statistics are saved via `StatRecorder` under the `stats/` directory.
-- Adversary checkpoints saved under `weights/` as `adversary_<episode>`.
-- The script copies `envs/highway_env_adv.py` and, for DQN, `agents/dqn_agent_cleanrl.py` into the run’s stats folder to capture the exact code used.
+```python
+python ego_agent_training\\train_ego_agent.py
+```
+You can specify different configurations for the ego agent by modifying the `ego_config` dictionary in the `src/dynasto/configs/agent_configs.py` file. The training process will save the trained model and training logs for later evaluation.
 
-## Troubleshooting
-- Import errors for `rl-agents`:
-  - Install from the Highway‑Env repository as shown above.
-- Missing model checkpoints:
-  - The script references specific files under `models/` and `out/`. Update those paths or adjust `ego_types`.
-- PyTorch/CUDA issues:
-  - Install the correct PyTorch build (CPU or matching your CUDA version).
-- `highwayadv-v0` not found:
-  - Ensure `envs/highway_env_adv.py` exists and run the script from the repo root so relative imports resolve.
+To set the adversarial vehicles that wil be used during the ego agent training, you can modify the `other_vehicles` parameter in the `ego_config` dictionary. Available options include: `highway_env.vehicle.behavior.DefensiveVehicle`, `highway_env.vehicle.behavior.AggressiveVehicle`, and `highway_env.vehicle.behavior.IDMVehicle`. Defensive is specified by default.
 
-## Notes
-- Keep models and outputs versioned per experiment.
-- Avoid changing `envs/highway_env_adv.py` mid‑experiment; it is copied to the stats folder for auditing.
+You can specify the number of training episodes and the duration of each episode by modifying the `EPISODES` variable.
+
+To enable or disable rendering as well as intermediary checkpoint saving, you can modify the `RenderCallback` and `CheckpointCallback` parameters in the `train_ego.py` script.
+
+By default, rendering is enabled and checkpoints are saved every 500 steps. 
+
+To evaluate the trained agent and visualize the execution traces, execute the following command:
+
+```python
+ego_agent_training\\test_ego.py
+``` 
+
+### Randomized and genetic algorithm-based adversarial agent 
+To train a randomized adversarial agent, change te `algo` variable in the `adversarial_test_generation\\train_adversary.py` script to `random` and execute the following command:
+
+```python
+python adversarial_test_generation\\train_adversary.py 
+```
+
+To train a genetic algorithm-based adversarial agent, change the `algo` variable to `ga` and execute the same command.
+Genetic algorithm parameters can be modified in the `adversarial_test_generation\\tester_config.yaml` file. The parameters include population size, number of generations, mutation probability, and others.
+
+The exection results will be saved in the `stats` folder, and the trained models will be saved in the `weights` folder. 
+We provide the pre-trained models for the ego vehicles, which can be selected by modifying the `ego_type` variable in the `train_adversary.py` script. Available options include `use_case_1` and `use_case_2`.
+
+### Training RL-based adversarial agent 
+To train a reinforcement learning-based adversarial agent, change the `algo` variable in the `adversarial_test_generation\\train_adversary.py` script to `dqn` and execute the following command:
+
+```python
+python adversarial_test_generation\\train_adversary.py 
+```
+
+### Training co-evoluanary adversarial agent
+To run the co-evolutionary setup, where the initialization of the test scenarios is optimized with a genetic algorithm while the adversarial agent is trained with reinforcement learning, execute the following command:
+
+```python
+python adversarial_test_generation\\coevolutionary_setup.py 
+```
+
+### Training Dynasto agent
+
+To train the Dynasto agent, which combines reinforcement learning and genetic algorithm for test scenario generation, execute the following command:
+
+```python
+python adversarial_test_generation\\dynasto_setup.py 
+```
+
+### Results analysis and visualization

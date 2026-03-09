@@ -1,6 +1,6 @@
 import json
 
-from agents.abstract_agent import AbstractAgent
+from dynasto.agents.abstract_agent import AbstractAgent
 
 
 class FileAgent(AbstractAgent):

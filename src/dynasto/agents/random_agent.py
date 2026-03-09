@@ -1,6 +1,6 @@
 import gymnasium as gym
 
-from agents.abstract_agent import AbstractAgent
+from dynasto.agents.abstract_agent import AbstractAgent
 
 
 def make_env(env_id, seed, idx, capture_video, run_name):

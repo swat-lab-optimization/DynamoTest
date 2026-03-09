@@ -13,7 +13,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from stable_baselines3.common.buffers import ReplayBuffer
 
-from agents.abstract_agent import AbstractAgent
+from dynasto.agents.abstract_agent import AbstractAgent
 
 
 @dataclass

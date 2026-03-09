@@ -72,7 +72,6 @@ class TraceRecorder:
         with open(trace_file, "w") as f:
             json.dump(self.all_frames_dict, f, indent=4)
 
-        print(f"Video trace saved to {trace_file}")
         # self.reset()  # Reset after saving to start a new trace for the next episode
 
     def save_trace_init(self, ego: ControlledVehicle, adv: ControlledVehicle):
@@ -100,7 +99,6 @@ class TraceRecorder:
         with open(scenario_file, "w") as f:
             json.dump(init_config, f, indent=4)
 
-        print(f"Scenario initialization saved to {scenario_file}")
 
     def reset(self):
         """

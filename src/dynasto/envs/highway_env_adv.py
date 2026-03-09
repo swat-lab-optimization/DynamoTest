@@ -13,10 +13,10 @@ from highway_env.utils import near_split
 from highway_env.vehicle.controller import ControlledVehicle
 from highway_env.vehicle.kinematics import Vehicle
 
-from common.trace_analyzer import TraceAnalyzer
-from common.trace_recorder import TraceRecorder
-from common.tracer_monitor import TracerMonitor
-from common.tracers import (
+from dynasto.common.trace_analyzer import TraceAnalyzer
+from dynasto.common.trace_recorder import TraceRecorder
+from dynasto.common.tracer_monitor import TracerMonitor
+from dynasto.common.tracers import (
     CutInSideTracer,
     CutInTracer,  # 8 ego lane 1
     CutOutTracer,  # 1
@@ -665,27 +665,21 @@ class HighwayEnvAdversary(HighwayEnvFast):
         )
 
         safe_distance = self._get_safe_distance()
-        print(f"Safe distance: {safe_distance}")
         safe_lateral_distance = self.get_safe_lateral_distance(
             self.controlled_vehicles[1].velocity
         )
-        print(f"Safe lateral distance: {safe_lateral_distance}")
         current_distace = self._get_distance()
         same_lane = (
             self.controlled_vehicles[0].lane_index
             == self.controlled_vehicles[1].lane_index
         )
-        print(f"Same lane: {same_lane}")
         if same_lane:
             collision_prob = self._get_collision_prob(safe_distance, current_distace)
         else:
             collision_prob = self._get_collision_prob(
                 safe_lateral_distance, current_distace
             )  # self._get_collision_prob(safe_distance, current_distace)/2 # self._get_collision_prob(safe_lateral_distance, current_distace)#
-        print(
-            f"Current distance: {current_distace}, Collision probability: {collision_prob}"
-        )
-        # print(f"Safe distance: {safe_distance}, Current distance: {current_distace}, Collision probability: {collision_prob}")
+
         slowdown = self._ego_slowdown_detect()
         lane_change = self._ego_lane_change_detect()
         adv_lane_change = self._adv_lane_change_detect()
@@ -703,25 +697,6 @@ class HighwayEnvAdversary(HighwayEnvFast):
             self._get_approach_reward() + self._get_negative_collision_reward()
         )
         self.approach_reward += approach_reward
-        # change_lane_reward = self._get_lane_change_reward(
-        #     slowdown, lane_change, adv_lane_change
-        # )
-        # self.change_lane_reward += change_lane_reward
-
-        # reward = self._get_distance_reward() + self._get_collision_reward()
-
-        # self.tracer.update(self.controlled_vehicles[0], self.controlled_vehicles[1])
-
-        # cut_in_reward =self.tracer_monitor.monitor_step(self.tracer.input_trace)
-        # cut_in_reward = (
-        #     self.tracer.evaluate_step(self.tracer.input_trace)
-        #     + self._get_collision_reward()
-        # )
-        # cut_in_reward += self._get_collision_reward()
-        # cut_in_reward += self._get_approach_reward()
-
-        # reward += change_lane_reward
-        # reward = cut_in_reward
 
         self.total_adv_reward += reward
 
@@ -737,7 +712,6 @@ class HighwayEnvAdversary(HighwayEnvFast):
         safe_distance = self._get_safe_distance()
         current_distace = self._get_distance()
         collision_prob = self._get_collision_prob(safe_distance, current_distace)
-        # print(f"Safe distance: {safe_distance}, Current distance: {current_distace}, Collision probability: {collision_prob}")
         slowdown = self._ego_slowdown_detect()
         lane_change = self._ego_lane_change_detect()
         adv_lane_change = self._adv_lane_change_detect()
@@ -759,24 +733,11 @@ class HighwayEnvAdversary(HighwayEnvFast):
         )
         self.change_lane_reward += change_lane_reward
 
-        # reward = self._get_distance_reward() + self._get_collision_reward()
-
-        # self.tracer.update(self.controlled_vehicles[0], self.controlled_vehicles[1])
-
-        # cut_in_reward =self.tracer_monitor.monitor_step(self.tracer.input_trace)
-        # cut_in_reward = (
-        #     self.tracer.evaluate_step(self.tracer.input_trace)
-        #     + self._get_collision_reward()
-        # )
-        # cut_in_reward += self._get_collision_reward()
-        # cut_in_reward += self._get_approach_reward()
 
         reward += change_lane_reward
-        # reward = cut_in_reward
-
         self.total_adv_reward += reward
 
-        return reward  # cut_in_reward#reward #follow_reward#reward #change_lane_reward# , approach_reward # , reward, reward#,
+        return reward
 
     def _agent_rewards(self, action: Action, vehicle: Vehicle) -> dict[str, float]:
         neighbours = self.road.network.all_side_lanes(vehicle.lane_index)
@@ -817,13 +778,7 @@ class HighwayEnvAdversary(HighwayEnvFast):
             )
 
             if i > 0:
-                # vehicle.DEFAULT_TARGET_SPEEDS = np.linspace(20, 40, 3)
-                # vehicle.target_speed = 25
-                # vehicle.DEFAULT_TARGET_SPEEDS = np.linspace(20, 40, 3)
-                # vehicle.position[0] = 240
                 vehicle.position[0] += random.randint(-5, 5)
-            #    vehicle.speed = 27
-            #    vehicle.target_speed = 28
             vehicle = self.action_type.vehicle_class(
                 self.road,
                 vehicle.position,
