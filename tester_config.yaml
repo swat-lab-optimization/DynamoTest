@@ -15,16 +15,3 @@ search_based:
   mutation_prob: 0.9
   problem_name: 'dynamic_testing'
   duplicate_threshold: 0.05
-
-fuzzing:
-  algorithm: "ga"
-  problem_name: 'uav'
-  max_depth: 5
-  min_depth: 1
-
-
-experiment:
-  name: "example_experiment-2"
-  description: "This is an example experiment configuration."
-  output_dir: "experiments"
-  log_level: "info"

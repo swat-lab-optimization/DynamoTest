@@ -1,5 +1,7 @@
 import gymnasium as gym
+
 from agents.abstract_agent import AbstractAgent
+
 
 def make_env(env_id, seed, idx, capture_video, run_name):
     def thunk():
@@ -15,10 +17,11 @@ def make_env(env_id, seed, idx, capture_video, run_name):
 
     return thunk
 
+
 class RandomAgent(AbstractAgent):
     def __init__(self, env):
         self.name = "RandomAgent"
-        self.env = env  
+        self.env = env
 
     def predict(self, obs, first=False):
         actions = self.env.action_space.sample()

@@ -1,29 +1,29 @@
+import json
+import sys
+from datetime import datetime
+
 import gymnasium as gym
-from gymnasium.wrappers import RecordVideo
-from gymnasium.envs.registration import register
 import highway_env  # noqa: F401
 import numpy as np
-import json
-from datetime import datetime
-from common.utils import StatRecorder
-from common.tracers import CutInTracer
+from gymnasium.envs.registration import register
+from gymnasium.wrappers import RecordVideo
 
-from agents.file_agent import FileAgent
-from common.tracer_monitor import TracerMonitor
-from common.trace_analyzer import TraceAnalyzer
-import sys
-from common.trace_recorder import TraceRecorder
-from envs.highway_env_adv import HighwayEnvAdversary
-from common.tracers import (
-    CutOutTracer, # 1
-    FrontSlowDownSameLaneTracer,
-
-    FrontSlowDownDifferentLaneTracer, # 6 ego lane 1
-    CutInSideTracer, 
-    EgoCutInTracer,
+from dynasto.agents.file_agent import FileAgent
+from dynasto.common.trace_analyzer import TraceAnalyzer
+from dynasto.common.trace_recorder import TraceRecorder
+from dynasto.common.tracer_monitor import TracerMonitor
+from dynasto.common.tracers import (
+    CutInSideTracer,
+    CutInTracer,
+    CutOutTracer,  # 1
     EgoCutInSideTracer,
-    EgoCutOutTracer
+    EgoCutInTracer,
+    EgoCutOutTracer,
+    FrontSlowDownDifferentLaneTracer,  # 6 ego lane 1
+    FrontSlowDownSameLaneTracer,
 )
+from dynasto.common.utils import StatRecorder
+from dynasto.envs.highway_env_adv import HighwayEnvAdversary
 
 TRAIN = False
 
@@ -82,15 +82,17 @@ ACTIONS_ALL = {0: "LANE_LEFT", 1: "IDLE", 2: "LANE_RIGHT", 3: "FASTER", 4: "SLOW
 
 register(
     id="highwayadv-v0",
-    entry_point=HighwayEnvAdversary,#"envs.highway_env_adv:HighwayEnvAdversary",
+    entry_point=HighwayEnvAdversary,  # "envs.highway_env_adv:HighwayEnvAdversary",
 )
 
 EPISODES = 30
 if __name__ == "__main__":
     env_ego = gym.make("highway-fast-v0", render_mode="rgb_array", config=config)
     env = gym.make("highwayadv-v0", render_mode="rgb_array", config=config_adv)
-    env.observation_space = gym.spaces.Box(low=-np.inf, high=np.inf, shape=(2, 5), dtype=np.float32)
-   # env._init()
+    env.observation_space = gym.spaces.Box(
+        low=-np.inf, high=np.inf, shape=(2, 5), dtype=np.float32
+    )
+    # env._init()
     # env.configure(config)
 
     obs, info = env.reset()
@@ -100,43 +102,46 @@ if __name__ == "__main__":
     # model_ego =  DQN.load("models\\model_dqn_fin_5_dec_24", env=env_ego)
     ego_type = "idm"  # stats\RL\rl_2025-05-01-2005-single_agent_idm_approach\run_0
     # model_ego =  DQN.load(f"models\\model_ego_dqn_01_05_25_{ego_type}.zip", env=env_ego)
-    #model_ego = DQN.load(f"models\\model_ego_dqn_26_05_25_aggressive.zip", env=env_ego)
+    # model_ego = DQN.load(f"models\\model_ego_dqn_26_05_25_aggressive.zip", env=env_ego)
     # model_ego  = DQN.load("models\\model.zip", env=env_ego)
-
 
     available_actions = list(range(5))
 
     # mab = MAB(arms=available_actions, learning_policy=LearningPolicy.LinUCB(alpha=2, l2_lambda=1))
     # model_adv = CMabModel(mab)
-    #model_adv = ChangeLanePolicy()
+    # model_adv = ChangeLanePolicy()
 
-    #weights_file = "weights\\RL\\rl_2025-06-26-2005-single_agent_cut_in_aggressive_req1-v2\\run_1\\adversary_2000"
+    # weights_file = "weights\\RL\\rl_2025-06-26-2005-single_agent_cut_in_aggressive_req1-v2\\run_1\\adversary_2000"
 
-    #video_folder = weights_file.replace("weights", "stats")
-    folder =  int(sys.argv[1]) # 12 #
-    recording_episode =  int(sys.argv[2]) # 12 #
+    # video_folder = weights_file.replace("weights", "stats")
+    folder = int(sys.argv[1])  # 12 #
+    recording_episode = int(sys.argv[2])  # 12 #
 
     video_folder = f"stats\\final_22_oct_uc2_tmp\\rl_2025-10-25-4005-dqn_baseline_defensive_uc2_ga_200_&rl_2.2_no_nov\\run_10\\{folder}"
-    #recording_init_file = f"{video_folder}\\scenario_init_episode_{recording_episode}.json"
-    recording_file = f"{video_folder}\\scenario_trace_episode_recording_{recording_episode}.json"
-    #tracer_monitor_file = f"{video_folder}\\tracer_monitor_pred_{recording_episode}.json"
+    # recording_init_file = f"{video_folder}\\scenario_init_episode_{recording_episode}.json"
+    recording_file = (
+        f"{video_folder}\\scenario_trace_episode_recording_{recording_episode}.json"
+    )
+    # tracer_monitor_file = f"{video_folder}\\tracer_monitor_pred_{recording_episode}.json"
     # with open(recording_init_file, 'r') as f:
     #     init_config = json.load(f)
-    with open(recording_file, 'r') as f:
+    with open(recording_file) as f:
         recording = json.load(f)
 
     init_config = recording["0"]
 
-    
     model_adv = FileAgent(scenario_file=recording_file)
-    env = RecordVideo(env, video_folder=video_folder,
-              episode_trigger=lambda e: True, name_prefix="video-replay")  # record all episodes
+    env = RecordVideo(
+        env,
+        video_folder=video_folder,
+        episode_trigger=lambda e: True,
+        name_prefix="video-replay",
+    )  # record all episodes
 
-# Provide the video recorder to the wrapped environment
-# so it can send it intermediate simulation frames.
+    # Provide the video recorder to the wrapped environment
+    # so it can send it intermediate simulation frames.
     env.unwrapped.set_record_video_wrapper(env)
     env.episode_id = recording_episode
-
 
     padding = np.zeros((3, 5))
     save_interval = 200
@@ -151,29 +156,46 @@ if __name__ == "__main__":
         experiment_description=experiment_description,
     )
     tracer = CutInTracer()
-    #beh_eval = BehaviorEvaluator()
-    #run_evaluator = RunEvaluator()
-    tracer_monitor = TracerMonitor([EgoCutInSideTracer(),EgoCutInTracer(), EgoCutOutTracer(), CutInSideTracer(), CutOutTracer(), CutInTracer(), FrontSlowDownSameLaneTracer(), FrontSlowDownDifferentLaneTracer()])
+    # beh_eval = BehaviorEvaluator()
+    # run_evaluator = RunEvaluator()
+    tracer_monitor = TracerMonitor(
+        [
+            EgoCutInSideTracer(),
+            EgoCutInTracer(),
+            EgoCutOutTracer(),
+            CutInSideTracer(),
+            CutOutTracer(),
+            CutInTracer(),
+            FrontSlowDownSameLaneTracer(),
+            FrontSlowDownDifferentLaneTracer(),
+        ]
+    )
     trace_analyzer = TraceAnalyzer()
     ep = recording_episode
     obs, info = env.reset()
     print(f"Episode {ep}")
 
-    trace_recorder = TraceRecorder(
-    save_folder=video_folder, episode= recording_episode
-    )
-    #video_annotator.save_trace_init(env.unwrapped.controlled_vehicles[0], env.unwrapped.controlled_vehicles[1])
+    trace_recorder = TraceRecorder(save_folder=video_folder, episode=recording_episode)
+    # video_annotator.save_trace_init(env.unwrapped.controlled_vehicles[0], env.unwrapped.controlled_vehicles[1])
     for i in range(len(env.unwrapped.controlled_vehicles)):
         if i == 0:
-            env.unwrapped.controlled_vehicles[i].position = np.array([init_config['ego_x'], init_config['ego_lane']])
-            #env.unwrapped.controlled_vehicles[i].speed = np.array(init_config['ego_veh']['speed'])
-            env.unwrapped.controlled_vehicles[i].heading = init_config['ego_heading']
-            env.unwrapped.controlled_vehicles[i].target_lane_index = tuple(init_config['ego_target_lane'])
+            env.unwrapped.controlled_vehicles[i].position = np.array(
+                [init_config["ego_x"], init_config["ego_lane"]]
+            )
+            # env.unwrapped.controlled_vehicles[i].speed = np.array(init_config['ego_veh']['speed'])
+            env.unwrapped.controlled_vehicles[i].heading = init_config["ego_heading"]
+            env.unwrapped.controlled_vehicles[i].target_lane_index = tuple(
+                init_config["ego_target_lane"]
+            )
         elif i == 1:
-            env.unwrapped.controlled_vehicles[i].position = np.array([init_config['adv_x'], init_config['adv_lane']])
-            #env.unwrapped.controlled_vehicles[i].speed = np.array(init_config['adv_veh']['speed'])
-            env.unwrapped.controlled_vehicles[i].heading = init_config['adv_heading']
-            env.unwrapped.controlled_vehicles[i].target_lane_index = tuple(init_config['adv_target_lane'])
+            env.unwrapped.controlled_vehicles[i].position = np.array(
+                [init_config["adv_x"], init_config["adv_lane"]]
+            )
+            # env.unwrapped.controlled_vehicles[i].speed = np.array(init_config['adv_veh']['speed'])
+            env.unwrapped.controlled_vehicles[i].heading = init_config["adv_heading"]
+            env.unwrapped.controlled_vehicles[i].target_lane_index = tuple(
+                init_config["adv_target_lane"]
+            )
 
     total_reward = 0
 
@@ -185,34 +207,48 @@ if __name__ == "__main__":
     #     env.unwrapped.controlled_vehicles[1],
     # )
     while not (done or truncated):
-
         obs_ego = obs[0]  # np.vstack((obs[0], padding))  #
         obs_adv = np.append(obs[0][0][1:], obs[0][1][1:])
 
         action_ego = model_adv.predict(obs_ego, step, "ego")
 
         action_adv = model_adv.predict(
-            obs_adv, step, "adv",
+            obs_adv,
+            step,
+            "adv",
         )
         action = (int(action_ego), int(action_adv))
-        #print(f"Action ego: {[action[0]]}, Action adv: {[action[1]]}, step: {step}")
+        # print(f"Action ego: {[action[0]]}, Action adv: {[action[1]]}, step: {step}")
 
         next_obs, reward, done, truncated, info = env.step(action)
         # tracer.update(
         #     env.unwrapped.controlled_vehicles[0],
         #     env.unwrapped.controlled_vehicles[1],
         # )
-        print(f"Adv speed {env.unwrapped.controlled_vehicles[1].velocity}, Ego speed {env.unwrapped.controlled_vehicles[0].velocity}")
-        print(f"Ego position {env.unwrapped.controlled_vehicles[0].position}, Adv position {env.unwrapped.controlled_vehicles[1].position}")
-        print(f"Adv lane index {env.unwrapped.controlled_vehicles[1].lane_index[2]}, Ego lane index {env.unwrapped.controlled_vehicles[0].lane_index[2]}")
-        print(f"Adv heading {env.unwrapped.controlled_vehicles[1].heading}, Ego heading {env.unwrapped.controlled_vehicles[0].heading}")
-        print(f"Adv - ego distance {env.unwrapped.controlled_vehicles[1].position[0] - env.unwrapped.controlled_vehicles[0].position[0]}, step: {step}")
+        print(
+            f"Adv speed {env.unwrapped.controlled_vehicles[1].velocity}, Ego speed {env.unwrapped.controlled_vehicles[0].velocity}"
+        )
+        print(
+            f"Ego position {env.unwrapped.controlled_vehicles[0].position}, Adv position {env.unwrapped.controlled_vehicles[1].position}"
+        )
+        print(
+            f"Adv lane index {env.unwrapped.controlled_vehicles[1].lane_index[2]}, Ego lane index {env.unwrapped.controlled_vehicles[0].lane_index[2]}"
+        )
+        print(
+            f"Adv heading {env.unwrapped.controlled_vehicles[1].heading}, Ego heading {env.unwrapped.controlled_vehicles[0].heading}"
+        )
+        print(
+            f"Adv - ego distance {env.unwrapped.controlled_vehicles[1].position[0] - env.unwrapped.controlled_vehicles[0].position[0]}, step: {step}"
+        )
         print("--------------------------------------------------------")
-        #tracer_monitor.monitor_step(tracer.input_trace)
-        #trace_recorder.update_trace(ego_veh=env.unwrapped.controlled_vehicles[0], ego_action=action[0], adv_veh=env.unwrapped.controlled_vehicles[1], adv_action=action[1])
-        #video_annotator.update_trace(ego_veh=env.unwrapped.controlled_vehicles[0], ego_action=action[0], adv_veh=env.unwrapped.controlled_vehicles[1], adv_action=action[1])
+        # tracer_monitor.monitor_step(tracer.input_trace)
+        # trace_recorder.update_trace(ego_veh=env.unwrapped.controlled_vehicles[0], ego_action=action[0], adv_veh=env.unwrapped.controlled_vehicles[1], adv_action=action[1])
+        # video_annotator.update_trace(ego_veh=env.unwrapped.controlled_vehicles[0], ego_action=action[0], adv_veh=env.unwrapped.controlled_vehicles[1], adv_action=action[1])
         next_obs_adv = np.append(next_obs[0][0][1:], next_obs[0][1][1:])
-        if env.unwrapped.controlled_vehicles[0].crashed or step >= len(model_adv.scenario) -1:
+        if (
+            env.unwrapped.controlled_vehicles[0].crashed
+            or step >= len(model_adv.scenario) - 1
+        ):
             # print("Ego crashed")
             done = True
         obs = next_obs
@@ -223,17 +259,7 @@ if __name__ == "__main__":
         total_reward += reward
         step += 1
 
-    #print(f"Tracer monitor: {tracer_monitor.tracer_dict}")
     print(f"Total reward: {total_reward}")
     print(f"Total steps: {step}")
-    #trace_results = tracer.evaluate(tracer.input_trace)
-    #tracer_monitor.monitor_episode(tracer.input_trace)
-    
-    #tracer_monitor.save(tracer_monitor_file)
-    #trace_analyzer.analyze(tracer_monitor.tracer_dict, trace_recorder.all_frames_dict)
-    #trace_recorder.save_trace()
-    
-    #beh_eval.record_behavior()
-    #tracer.reset()
 
     env.close()

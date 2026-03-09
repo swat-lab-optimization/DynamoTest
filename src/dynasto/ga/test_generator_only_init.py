@@ -1,39 +1,39 @@
-from ambiegen.testers.abstract_evolutionary_tester_ask_tell import AbstractEvolutionaryTesterAskTell
-from ambiegen.generators.abstract_generator import AbstractGenerator
+import random
 
 import numpy as np
 import yaml
-import random
+from ambiegen.generators.abstract_generator import AbstractGenerator
+from ambiegen.testers.abstract_evolutionary_tester_ask_tell import (
+    AbstractEvolutionaryTesterAskTell,
+)
+
+
 class GATester(AbstractEvolutionaryTesterAskTell):
     def __init__(self, name, config):
-        with open(config, 'r') as f:
+        with open(config) as f:
             config = yaml.safe_load(f)
         super().__init__(name, config)
 
     def initialize_test_generator(self):
         self.generator = DynamicTestGenerator(
-            name="DynamicTestGenerator",
-            size=40,
-            min_val=0,
-            max_val=4
+            name="DynamicTestGenerator", size=40, min_val=0, max_val=4
         )
 
     def initialize_test_executors(self):
         self.executors = []
 
-    
+
 class GAInitTester(AbstractEvolutionaryTesterAskTell):
     def __init__(self, name, config):
-        with open(config, 'r') as f:
+        with open(config) as f:
             config = yaml.safe_load(f)
         super().__init__(name, config)
 
     def initialize_test_generator(self):
 
-
         # providing minimal values for such parameters
-        #ego_x, ego_y, ego_heading, ego_speed, ego_target_lane
-        #adv_x, adv_y, adv_heading, adv_speed, adv_target_lane, test index
+        # ego_x, ego_y, ego_heading, ego_speed, ego_target_lane
+        # adv_x, adv_y, adv_heading, adv_speed, adv_target_lane, test index
         min_vals = [230, 0, -0.07, 21, 0, 280, 0, -0.07, 21, 0]
         max_vals = [280, 1, 0.07, 29, 1, 340, 1, 0.07, 29, 1]
         val_types = [float, int, float, float, int, float, int, float, float, int]
@@ -47,6 +47,7 @@ class GAInitTester(AbstractEvolutionaryTesterAskTell):
 
     def initialize_test_executors(self):
         self.executors = []
+
 
 class DynamicTestGenerator(AbstractGenerator):
     def __init__(self, name, size, min_val, max_val):
@@ -63,8 +64,7 @@ class DynamicTestGenerator(AbstractGenerator):
         test = np.random.choice(values, size=self.size, replace=True)
         test = self.normalize(test, self._min_val, self._max_val)
 
-        return test 
-    
+        return test
 
     def normalize(self, vec, min_val=0, max_val=4):
         """Normalize integer vector to range [0, 1]."""
@@ -77,7 +77,7 @@ class DynamicTestGenerator(AbstractGenerator):
     @property
     def size(self):
         return self._size
-    
+
     @property
     def lower_bound(self):
         return [0] * self.size
@@ -96,9 +96,8 @@ class DynamicTestGenerator(AbstractGenerator):
     def is_valid(self, test):
         return True, "Valid test"
 
-    def visualize_test(self, test, save_path = None):
+    def visualize_test(self, test, save_path=None):
         pass
-
 
 
 class DynamicInitTestGenerator(DynamicTestGenerator):
@@ -115,7 +114,6 @@ class DynamicInitTestGenerator(DynamicTestGenerator):
             normed.append(normed_val)
         return normed
 
-
     def denormalize(self, vec):
         vector = []
         ranges = zip(self._min_val, self._max_val, self._val_types)
@@ -129,7 +127,7 @@ class DynamicInitTestGenerator(DynamicTestGenerator):
     def generate_random_test(self):
         vector = []
         ranges = zip(self._min_val, self._max_val, self._val_types)
-        for (low, high, dtype) in ranges:
+        for low, high, dtype in ranges:
             if dtype == int:
                 value = random.randint(low, high)
             elif dtype == float:
@@ -140,27 +138,22 @@ class DynamicInitTestGenerator(DynamicTestGenerator):
 
         normalized_test = self.normalize(vector)
         return normalized_test
-    
+
     def genotype2phenotype(self, genotype):
         result = {"init": None, "adv_actions": None}
         phenotype = self.denormalize(genotype)
 
-
-        #adv_actions = self._dynamic_tests[str(int(phenotype[-1]))]["adv_actions"]
+        # adv_actions = self._dynamic_tests[str(int(phenotype[-1]))]["adv_actions"]
 
         if phenotype[1] > 0.5:
             phenotype[1] = 4
         if phenotype[6] > 0.5:
             phenotype[6] = 4
 
-
-        phenotype[4] =  ("0", "1", int(phenotype[4]))
-        phenotype[9] =  ("0", "1", int(phenotype[9]))
-
+        phenotype[4] = ("0", "1", int(phenotype[4]))
+        phenotype[9] = ("0", "1", int(phenotype[9]))
 
         result["init"] = phenotype[:10]
-       # result["adv_actions"] = adv_actions
+        # result["adv_actions"] = adv_actions
 
         return result
-    
-

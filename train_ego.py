@@ -1,14 +1,14 @@
-import gymnasium as gym
-from stable_baselines3 import DQN
 import os
-import highway_env  # noqa: F401
-from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.common.callbacks import CheckpointCallback
 
-from configs.agent_configs import config
+import gymnasium as gym
+import highway_env  # noqa: F401
+from stable_baselines3 import DQN
+from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
+
+from dynasto.configs.agent_configs import config
+
 # highway_env._register_highway_envs()
 TRAIN = True
-
 
 
 class RenderCallback(BaseCallback):
@@ -55,16 +55,6 @@ if __name__ == "__main__":
         device="cuda",  # Use GPU if available
     )
 
-    """
-    model = PPO(
-        "MlpPolicy",
-        env,
-
-        ent_coef=0.01,
-        tensorboard_log=tensorboard_save_path,
-        device="cuda",  # Use GPU if available
-    )"""
-
     checkpoint_callback = CheckpointCallback(
         save_freq=500,  # Save every 10000 steps (adjust as needed)
         save_path="./model_checkpoints/",  # Directory to save checkpoints
@@ -73,7 +63,8 @@ if __name__ == "__main__":
 
     if TRAIN:
         model.learn(
-            total_timesteps=EPISODES * config["duration"]
-        )  # , callback = RenderCallback(render_freq=1) , callback=checkpoint_callback
+            total_timesteps=EPISODES * config["duration"],
+            callback=[RenderCallback(render_freq=1), checkpoint_callback],
+        )  #
         model.save(model_save_path)
         # del model

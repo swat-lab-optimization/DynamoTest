@@ -1,11 +1,11 @@
 import base64
+import csv
+import json
+import os
 from pathlib import Path
 
 from gymnasium.wrappers import RecordVideo
 from IPython import display as ipythondisplay
-import json
-import os
-import csv
 
 
 def record_videos(env, video_folder="videos"):
@@ -97,7 +97,7 @@ class StatRecorder:
                 writer.writerow(header)
 
         else:
-            with open(filename, "r") as f:
+            with open(filename) as f:
                 data = json.load(f)
             data.update(result)
             with open(filename, "w") as f:

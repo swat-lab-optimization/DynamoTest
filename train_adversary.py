@@ -1,19 +1,19 @@
-import gymnasium as gym
+import json
+import os
+import shutil
+from datetime import datetime
 
+import gymnasium as gym
 import highway_env  # noqa: F401
 import numpy as np
-from gymnasium.envs.registration import register
-import json
-
 import tyro
-from datetime import datetime
+from gymnasium.envs.registration import register
 from rl_agents.agents.common.factory import agent_factory, load_agent_config
-import os
-from common.utils import StatRecorder
-from agents.dqn_agent_cleanrl import Args, DQNAgentCLRL
-from agents.random_agent import RandomAgent
-import shutil
-from ga.test_generator import GATester
+
+from dynasto.agents.dqn_agent_cleanrl import Args, DQNAgentCLRL
+from dynasto.agents.random_agent import RandomAgent
+from dynasto.common.utils import StatRecorder
+from dynasto.ga.test_generator import GATester
 
 TRAIN = True
 config_adv = {
@@ -84,15 +84,13 @@ EPISODES = 4005
 if __name__ == "__main__":
     runs = 10
     ego_types = [
-        "baseline_defensive", 
+        "baseline_defensive",
     ]
     algo = "dqn"
     all_tests = {}
     ego_type = "use_case_1"
     for run in range(0, runs):
-        env_ego = gym.make(
-            "highway-fast-v0", render_mode="rgb_array", config=config
-        )
+        env_ego = gym.make("highway-fast-v0", render_mode="rgb_array", config=config)
         env = gym.make("highwayadv-v0", render_mode="rgb_array", config=config_adv)
         env.observation_space = gym.spaces.Box(
             low=0, high=1, shape=(2, 5), dtype=np.float32
@@ -121,14 +119,11 @@ if __name__ == "__main__":
 
         env.reset_failure_dict()
 
-
         padding = np.zeros((3, 5))
         save_interval = 200
         add_info = f"{algo}_{ego_type}_new_uc2_no_novelty"  # reward-2"
         experiment_name = f"{cur_date}-{EPISODES}-{add_info}"  #
-        weights_folder = (
-            f"weights\\final_26_oct_uc2\\rl_{experiment_name}\\run_{run}"
-        )
+        weights_folder = f"weights\\final_26_oct_uc2\\rl_{experiment_name}\\run_{run}"
         stats_folder = f"stats\\final_26_oct_uc2\\rl_{experiment_name}\\run_{run}"
         experiment_description = """New defensive agent, nonovelty added. """
         stat_recorder = StatRecorder(

@@ -62,7 +62,7 @@ class TraceAnalyzer:
                             found = True
                             tracer_found = tracer
                             break
-                    except Exception as e:
+                    except Exception:
                         continue
 
             if found:

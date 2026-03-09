@@ -1,8 +1,7 @@
 import gymnasium as gym
 import highway_env  # noqa: F401
+from gymnasium.wrappers import RecordVideo
 from stable_baselines3 import DQN
-
-# from adversarial_behavior_mab_old import AdversarialVehicle
 
 config = {
     "observation": {
@@ -45,17 +44,13 @@ if __name__ == "__main__":
     # Create the environment
     env = gym.make("highway-fast-v0", render_mode="rgb_array", config=config)
 
-    model = DQN.load("models\\model_ego_dqn_26_05_25_aggressive.zip", env=env)
+    model = DQN.load("model_checkpoints\\model_ego_dqn_test_1000_steps.zip", env=env)
 
-    """
-    env = RecordVideo(
-    env, video_folder="videos/test", episode_trigger=lambda e: True
-    )
-    
+    env = RecordVideo(env, video_folder="videos/test", episode_trigger=lambda e: True)
+
     env.unwrapped.set_record_video_wrapper(env)
-    
+
     env.unwrapped.config["simulation_frequency"] = 15  # Higher FPS for rendering
-    """
 
     for videos in range(20):
         done = truncated = False

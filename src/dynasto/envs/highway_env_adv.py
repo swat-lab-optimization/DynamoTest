@@ -1,29 +1,31 @@
 from __future__ import annotations
 
-import numpy as np
-import math
+import copy
 import json
+import math
+import random
+
+import numpy as np
 from highway_env import utils
+from highway_env.envs import HighwayEnvFast
 from highway_env.envs.common.action import Action
 from highway_env.utils import near_split
 from highway_env.vehicle.controller import ControlledVehicle
 from highway_env.vehicle.kinematics import Vehicle
-from common.tracer_monitor import TracerMonitor
-import copy
-import random
-from common.tracers import (
-    CutOutTracer,  # 1
-    FrontSlowDownSameLaneTracer,
-    FrontSlowDownDifferentLaneTracer,  # 6 ego lane 1
-    CutInTracer,  # 8 ego lane 1
-    CutInSideTracer,
-    EgoCutInTracer,
-    EgoCutInSideTracer,
-    EgoCutOutTracer,
-)
+
 from common.trace_analyzer import TraceAnalyzer
 from common.trace_recorder import TraceRecorder
-from highway_env.envs import HighwayEnvFast
+from common.tracer_monitor import TracerMonitor
+from common.tracers import (
+    CutInSideTracer,
+    CutInTracer,  # 8 ego lane 1
+    CutOutTracer,  # 1
+    EgoCutInSideTracer,
+    EgoCutInTracer,
+    EgoCutOutTracer,
+    FrontSlowDownDifferentLaneTracer,  # 6 ego lane 1
+    FrontSlowDownSameLaneTracer,
+)
 
 Observation = np.ndarray
 

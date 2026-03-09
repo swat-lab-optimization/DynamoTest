@@ -1,9 +1,9 @@
 # docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/dqn/#dqnpy
+import json
 import os
 import random
 import time
-from dataclasses import dataclass, asdict
-import json
+from dataclasses import asdict, dataclass
 
 import gymnasium as gym
 import numpy as np
@@ -12,7 +12,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from stable_baselines3.common.buffers import ReplayBuffer
+
 from agents.abstract_agent import AbstractAgent
+
 
 @dataclass
 class Args:
@@ -42,13 +44,13 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "highway-fast-v0"
     """the id of the environment"""
-    total_timesteps: int =  160000#80000#160000
+    total_timesteps: int = 160000  # 80000#160000
     """total timesteps of the experiments"""
     learning_rate: float = 5e-4
     """the learning rate of the optimizer"""
     num_envs: int = 1
     """the number of parallel game environments"""
-    buffer_size: int = 150000 #150000
+    buffer_size: int = 150000  # 150000
     """the replay memory buffer size"""
     gamma: float = 0.95
     """the discount factor gamma"""
@@ -62,12 +64,13 @@ class Args:
     """the starting epsilon for exploration"""
     end_e: float = 0.05
     """the ending epsilon for exploration"""
-    exploration_fraction: float = 0.2 #0.5
+    exploration_fraction: float = 0.2  # 0.5
     """the fraction of `total-timesteps` it takes from start-e to go end-e"""
     learning_starts: int = 5000
     """timestep to start learning"""
     train_frequency: int = 4
     """the frequency of training"""
+
 
 def make_env(env_id, seed, idx, capture_video, run_name):
     def thunk():
@@ -84,8 +87,6 @@ def make_env(env_id, seed, idx, capture_video, run_name):
     return thunk
 
 
-
-
 class QNetwork(nn.Module):
     def __init__(self, env):
         super().__init__()
@@ -100,13 +101,16 @@ class QNetwork(nn.Module):
     def forward(self, x):
         return self.network(x)
 
+
 class DQNAgentCLRL(AbstractAgent):
     def __init__(self, envs, args: Args, writer=None):
         self.name = "DQN"
         self.envs = envs
         self.args = args
         self.writer = writer
-        self.device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
+        self.device = torch.device(
+            "cuda" if torch.cuda.is_available() and args.cuda else "cpu"
+        )
         self.start_time = time.time()
 
         self.q_network = QNetwork(envs).to(self.device)
@@ -114,11 +118,16 @@ class DQNAgentCLRL(AbstractAgent):
         self.target_network = QNetwork(envs).to(self.device)
         self.target_network.load_state_dict(self.q_network.state_dict())
 
-        self.rb = ReplayBuffer(args.buffer_size, envs.observation_space, envs.action_space, self.device, handle_timeout_termination=False)
+        self.rb = ReplayBuffer(
+            args.buffer_size,
+            envs.observation_space,
+            envs.action_space,
+            self.device,
+            handle_timeout_termination=False,
+        )
 
         self.global_step = 0
         self.loaded = False
-
 
     @staticmethod
     def linear_schedule(start_e: float, end_e: float, duration: int, t: int):
@@ -126,16 +135,25 @@ class DQNAgentCLRL(AbstractAgent):
         return max(slope * t + start_e, end_e)
 
     def predict(self, obs, first=False):
-        epsilon = DQNAgentCLRL.linear_schedule(self.args.start_e, self.args.end_e, self.args.exploration_fraction * self.args.total_timesteps, self.global_step)
+        epsilon = DQNAgentCLRL.linear_schedule(
+            self.args.start_e,
+            self.args.end_e,
+            self.args.exploration_fraction * self.args.total_timesteps,
+            self.global_step,
+        )
         if random.random() < epsilon:
             actions = np.array([self.envs.action_space.sample()])
         else:
             if self.loaded:
                 with torch.no_grad():
-                    q_values = self.q_network(torch.Tensor(obs).reshape(1, -1).to(self.device))
+                    q_values = self.q_network(
+                        torch.Tensor(obs).reshape(1, -1).to(self.device)
+                    )
             else:
-                q_values = self.q_network(torch.Tensor(obs).reshape(1, -1).to(self.device))
-            
+                q_values = self.q_network(
+                    torch.Tensor(obs).reshape(1, -1).to(self.device)
+                )
+
             actions = torch.argmax(q_values, dim=1).cpu().numpy()
 
         return actions
@@ -153,16 +171,37 @@ class DQNAgentCLRL(AbstractAgent):
             if self.global_step % self.args.train_frequency == 0:
                 data = self.rb.sample(self.args.batch_size)
                 with torch.no_grad():
-                    target_max, _ = self.target_network(data.next_observations.reshape(data.next_observations.shape[0], -1)).max(dim=1)
-                    td_target = data.rewards.flatten() + self.args.gamma * target_max * (1 - data.dones.flatten())
-                old_val = self.q_network(data.observations.reshape(data.observations.shape[0], -1)).gather(1, data.actions).squeeze()
+                    target_max, _ = self.target_network(
+                        data.next_observations.reshape(
+                            data.next_observations.shape[0], -1
+                        )
+                    ).max(dim=1)
+                    td_target = (
+                        data.rewards.flatten()
+                        + self.args.gamma * target_max * (1 - data.dones.flatten())
+                    )
+                old_val = (
+                    self.q_network(
+                        data.observations.reshape(data.observations.shape[0], -1)
+                    )
+                    .gather(1, data.actions)
+                    .squeeze()
+                )
                 loss = F.mse_loss(td_target, old_val)
 
                 if self.global_step % 100 == 0 and self.writer is not None:
                     self.writer.add_scalar("losses/td_loss", loss, self.global_step)
-                    self.writer.add_scalar("losses/q_values", old_val.mean().item(), self.global_step)
-                    print("SPS:", int(self.global_step / (time.time() - self.start_time)))
-                    self.writer.add_scalar("charts/SPS", int(self.global_step / (time.time() - self.start_time)), self.global_step)
+                    self.writer.add_scalar(
+                        "losses/q_values", old_val.mean().item(), self.global_step
+                    )
+                    print(
+                        "SPS:", int(self.global_step / (time.time() - self.start_time))
+                    )
+                    self.writer.add_scalar(
+                        "charts/SPS",
+                        int(self.global_step / (time.time() - self.start_time)),
+                        self.global_step,
+                    )
 
                 # optimize the model
                 self.optimizer.zero_grad()
@@ -171,11 +210,14 @@ class DQNAgentCLRL(AbstractAgent):
 
             # update target network
             if self.global_step % self.args.target_network_frequency == 0:
-                for target_network_param, q_network_param in zip(self.target_network.parameters(), self.q_network.parameters()):
+                for target_network_param, q_network_param in zip(
+                    self.target_network.parameters(), self.q_network.parameters()
+                ):
                     target_network_param.data.copy_(
-                        self.args.tau * q_network_param.data + (1.0 - self.args.tau) * target_network_param.data
+                        self.args.tau * q_network_param.data
+                        + (1.0 - self.args.tau) * target_network_param.data
                     )
-        
+
         self.global_step += 1
 
     def save(self, model_path):

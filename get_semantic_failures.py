@@ -1,10 +1,10 @@
-
-import os
 import json
+import os
 
 
-
-def symbolic_event_vector(event_dict, event_to_id=None, window_size=10, failure_marker=999):
+def symbolic_event_vector(
+    event_dict, event_to_id=None, window_size=10, failure_marker=999
+):
     """
     Convert an event dictionary into a symbolic sequence for clustering.
     If fewer than window_size steps exist, failure is marked right after the last real step,
@@ -23,7 +23,9 @@ def symbolic_event_vector(event_dict, event_to_id=None, window_size=10, failure_
     # Build event sequence (sum of active event IDs per step)
     sequence = []
     for step in sorted_steps[-window_size:]:  # only last window_size steps if longer
-        event_sum = sum(event_to_id[name] for name, active in event_dict[step].items() if active)
+        event_sum = sum(
+            event_to_id[name] for name, active in event_dict[step].items() if active
+        )
         sequence.append(event_sum)
 
     # If fewer than window_size steps → pad *after* failure position
@@ -38,8 +40,9 @@ def symbolic_event_vector(event_dict, event_to_id=None, window_size=10, failure_
 
     return sequence
 
+
 if __name__ == "__main__":
-    #@result_path = "stats\\final_22_oct_uc1_temp\\rl_2025-10-22-4005-dqn_baseline_uc1_ga_200_&rl"
+    # @result_path = "stats\\final_22_oct_uc1_temp\\rl_2025-10-22-4005-dqn_baseline_uc1_ga_200_&rl"
     folder = "stats\\RQ\\RQ1\\uc2"
     for file in os.listdir(folder):
         print(f"Processing {file}...")
@@ -48,7 +51,6 @@ if __name__ == "__main__":
         convergence_data = {}
         fail_data = {}
         for res_folder in os.listdir(result_path):
-
             if not res_folder.startswith("run_"):
                 continue
             print(f"  Analyzing {res_folder}...")
@@ -60,7 +62,11 @@ if __name__ == "__main__":
                 pattern = "tracer_monitor"
 
                 # List all matching files
-                matching_files = [f for f in os.listdir(os.path.join(folder_path, fail_folder)) if pattern in f]
+                matching_files = [
+                    f
+                    for f in os.listdir(os.path.join(folder_path, fail_folder))
+                    if pattern in f
+                ]
                 failure_file = os.path.join(folder_path, fail_folder, matching_files[0])
                 with open(failure_file) as f:
                     data = json.load(f)

@@ -5,7 +5,6 @@ or over full episodes, tracking which tracers reported positive robustness and
 providing lightweight bookkeeping across steps and episodes.
 """
 
-from typing import List
 from common.tracers import AbstractSignalTracer
 
 
@@ -22,21 +21,21 @@ class TracerMonitor:
         episode: Episode counter incremented at each reset.
     """
 
-    def __init__(self, tracer_list: List[AbstractSignalTracer]):
+    def __init__(self, tracer_list: list[AbstractSignalTracer]):
         """Initialize the monitor with a set of tracers.
 
         Args:
             tracer_list: Concrete `AbstractSignalTracer` instances to run.
         """
         self.tracers = tracer_list
-        self._trace_index = 0  
+        self._trace_index = 0
         self._step = 0
-        self.tracer_dict = {}  
-        self.global_tracer_dict = {}  
+        self.tracer_dict = {}
+        self.global_tracer_dict = {}
         self.positive_flag = False
         self.positive_tracer_names = []
         self.global_positive_tracer_names = []
-        self.all_trace = {} 
+        self.all_trace = {}
         self.episode = 0
 
     def monitor_step(self, input_trace):

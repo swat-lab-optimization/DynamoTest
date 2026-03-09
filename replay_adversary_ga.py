@@ -1,21 +1,20 @@
-import gymnasium as gym
-from stable_baselines3 import DQN
+import json
+import os
+import shutil
+from datetime import datetime
 
+import gymnasium as gym
 import highway_env  # noqa: F401
 import numpy as np
-from gymnasium.envs.registration import register
-import json
-
 import tyro
-from datetime import datetime
+from gymnasium.envs.registration import register
 from rl_agents.agents.common.factory import agent_factory, load_agent_config
-import os
-from common.utils import StatRecorder
-from agents.dqn_agent_cleanrl import Args, DQNAgentCLRL
-from agents.cmab_agent import CMabModel
-from mabwiser.mab import LearningPolicy
-from agents.random_agent import RandomAgent
-import shutil
+from stable_baselines3 import DQN
+
+from dynasto.agents.dqn_agent_cleanrl import Args, DQNAgentCLRL
+from dynasto.agents.random_agent import RandomAgent
+from dynasto.common.utils import StatRecorder
+
 TRAIN = True
 from ga.test_generator import GAInitTester
 
@@ -101,39 +100,39 @@ if __name__ == "__main__":
                 low=0, high=1, shape=(2, 5), dtype=np.float32
             )
 
-
-
             available_actions = list(range(5))
-            #model_adv = FollowPolicyPID(
+            # model_adv = FollowPolicyPID(
             #    target_distance=10, front_follow=True
-            #)  # IdmPolicy()
+            # )  # IdmPolicy()
 
             if algo == "dqn":
                 args = tyro.cli(Args)
                 model_adv = DQNAgentCLRL(env_ego, args)
-            elif algo == "cmab":
-                model_adv = CMabModel(actions=available_actions, learning_policy=LearningPolicy.LinUCB(alpha=1.25, l2_lambda=1))
             elif algo == "random":
                 model_adv = RandomAgent(env_ego)
-            #model_adv = CMabModel(arms=available_actions, learning_policy=LearningPolicy.LinUCB(alpha=1.25, l2_lambda=1))
+            # model_adv = CMabModel(arms=available_actions, learning_policy=LearningPolicy.LinUCB(alpha=1.25, l2_lambda=1))
             elif algo == "ga":
                 # dynamic_test_file = "stats\\RQ\\RQ1\\uc1\\rl_2025-10-18-4005-dqn_baseline_safe_dist\\extracted_tests.json"
                 # fail_dict_file = "stats\\RQ\\RQ1\\uc1\\rl_2025-10-18-4005-dqn_baseline_safe_dist\\extracted_fail_configs.json"
                 dynamic_test_file = "stats\\RQ\\RQ1\\uc2\\rl_2025-10-21-4005-dqn_baseline_defensive_uc2\\extracted_tests.json"
                 fail_dict_file = "stats\\RQ\\RQ1\\uc2\\rl_2025-10-21-4005-dqn_baseline_defensive_uc2\\extracted_fail_configs.json"
-                with open(dynamic_test_file, 'r') as f:
-                     all_dynamic_tests = json.load(f)
+                with open(dynamic_test_file) as f:
+                    all_dynamic_tests = json.load(f)
                 dynamic_tests = all_dynamic_tests[f"run_{run}"]
-                with open(fail_dict_file, 'r') as f:
+                with open(fail_dict_file) as f:
                     all_fail_dicts = json.load(f)
                 fail_dicts = all_fail_dicts[f"run_{run}"]
-                tester = GAInitTester(name="GATester", config="tester_config.yaml", dynamic_tests=dynamic_tests)
+                tester = GAInitTester(
+                    name="GATester",
+                    config="tester_config.yaml",
+                    dynamic_tests=dynamic_tests,
+                )
                 tester.initialize()
             env_ego.observation_space = gym.spaces.Box(
                 low=0, high=1, shape=(5, 5), dtype=np.float32
             )
 
-            #obs, info = env.reset()
+            # obs, info = env.reset()
 
             if ego_type == "baseline":
                 model_json_file = "models\\dqn.json"
@@ -144,21 +143,21 @@ if __name__ == "__main__":
                 model_ego.load(ego_file)
             elif ego_type == "baseline_defensive":
                 model_json_file = "models\\dqn.json"
-                ego_file = "out\\run_20251020-125802_21988_ego_defensive\\checkpoint-best.tar"
-                #ego_file = "out\\out\\run_20251026-135023_17256_ego_defensive_2\\checkpoint-best.tar"
+                ego_file = (
+                    "out\\run_20251020-125802_21988_ego_defensive\\checkpoint-best.tar"
+                )
+                # ego_file = "out\\out\\run_20251026-135023_17256_ego_defensive_2\\checkpoint-best.tar"
                 a_c_1 = load_agent_config(model_json_file)
                 model_ego = agent_factory(env_ego, a_c_1)
             else:
-
                 model_ego = DQN.load(
                     f"models/model_ego_dqn_01_05_25_{ego_type}.zip", env=env_ego
                 )
-        #     model_ego = DQN.load(
-        #     f"models\\model_ego_dqn_26_05_25_aggressive.zip", env=env_ego
-        # )
-            #env.reset_failure_dict()
+            #     model_ego = DQN.load(
+            #     f"models\\model_ego_dqn_26_05_25_aggressive.zip", env=env_ego
+            # )
+            # env.reset_failure_dict()
             env.load_failure_dict(fail_dicts)
-
 
             # model_adv.load("weights\\RL\\rl_2025-04-07-1000-dqn\\adversarial_vehicle_model_0")
 
@@ -175,15 +174,17 @@ if __name__ == "__main__":
                 experiment_description=experiment_description,
             )
             env.trace_recorder.save_folder = stats_folder
-            shutil.copyfile("tester_config.yaml", f"stats\\final_uc2\\rl_{experiment_name}\\tester_config.yaml")
+            shutil.copyfile(
+                "tester_config.yaml",
+                f"stats\\final_uc2\\rl_{experiment_name}\\tester_config.yaml",
+            )
 
             for ep in range(EPISODES):
-                #env.trace_recorder_save_path = stats_folder
+                # env.trace_recorder_save_path = stats_folder
                 obs, info = env.reset()
                 obs_ego, info_ego = env_ego.reset()
                 print(f"Episode {ep}")
                 total_reward = 0
-                
 
                 done = truncated = False
                 first = True
@@ -191,22 +192,29 @@ if __name__ == "__main__":
                     test = tester.ask_next()
                     valid, fitness, test = tester.verify_next(test)
 
-
                 for i in range(len(env.unwrapped.controlled_vehicles)):
                     if i == 0:
-                        env.unwrapped.controlled_vehicles[i].position = np.array([test["init"][0], test['init'][1]])
-                        #env.unwrapped.controlled_vehicles[i].speed = np.array(init_config['ego_veh']['speed'])
+                        env.unwrapped.controlled_vehicles[i].position = np.array(
+                            [test["init"][0], test["init"][1]]
+                        )
+                        # env.unwrapped.controlled_vehicles[i].speed = np.array(init_config['ego_veh']['speed'])
                         env.unwrapped.controlled_vehicles[i].heading = test["init"][2]
-                        #env.unwrapped.controlled_vehicles[i].speed = test["init"][3]
-                        env.unwrapped.controlled_vehicles[i].target_lane_index = (test["init"][4])
+                        # env.unwrapped.controlled_vehicles[i].speed = test["init"][3]
+                        env.unwrapped.controlled_vehicles[i].target_lane_index = test[
+                            "init"
+                        ][4]
                     elif i == 1:
-                        env.unwrapped.controlled_vehicles[i].position = np.array([test['init'][5], test['init'][6]])
-                        #env.unwrapped.controlled_vehicles[i].speed = np.array(init_config['adv_veh']['speed'])
-                        env.unwrapped.controlled_vehicles[i].heading = test['init'][7]
-                       # env.unwrapped.controlled_vehicles[i].speed = test['init'][8]
-                        env.unwrapped.controlled_vehicles[i].target_lane_index = (test['init'][9])
+                        env.unwrapped.controlled_vehicles[i].position = np.array(
+                            [test["init"][5], test["init"][6]]
+                        )
+                        # env.unwrapped.controlled_vehicles[i].speed = np.array(init_config['adv_veh']['speed'])
+                        env.unwrapped.controlled_vehicles[i].heading = test["init"][7]
+                        # env.unwrapped.controlled_vehicles[i].speed = test['init'][8]
+                        env.unwrapped.controlled_vehicles[i].target_lane_index = test[
+                            "init"
+                        ][9]
                 i = 0
-                adv_action_list = test['adv_actions']
+                adv_action_list = test["adv_actions"]
                 while not (done or truncated):
                     # Dispatch the observations to the model to get the tuple of actions
 
@@ -219,36 +227,37 @@ if __name__ == "__main__":
                         action_adv = adv_action_list[i]
                     else:
                         action_adv = model_adv.predict(obs_adv, first=first)
-                    action = ((action_ego),(action_adv))
+                    action = ((action_ego), (action_adv))
 
                     next_obs, reward, done, truncated, info = env.step(action)
                     next_obs_adv = next_obs[0]
-
 
                     if algo != "ga":
                         model_adv.update(
                             obs_adv,
                             action[1],
                             next_obs_adv,
-                        float(reward),
-                        info,
-                        done,
-                        truncated,
+                            float(reward),
+                            info,
+                            done,
+                            truncated,
                         )
-                    if env.unwrapped.controlled_vehicles[0].crashed or i >= len(adv_action_list)-1:
+                    if (
+                        env.unwrapped.controlled_vehicles[0].crashed
+                        or i >= len(adv_action_list) - 1
+                    ):
                         done = True
                     obs = next_obs
                     first = False
-                    #env.render()
+                    # env.render()
                     total_reward += reward
                     i += 1
                 print(f"Total reward: {total_reward}")
                 if algo == "ga":
-                    tester.tell_next(test, [total_reward*(-1)], "pass")
+                    tester.tell_next(test, [total_reward * (-1)], "pass")
 
                 stat_recorder.save_stats(episode=ep, env=env.unwrapped)
                 # Save the model
-
 
                 if algo != "ga":
                     if TRAIN and ep % save_interval == 0:

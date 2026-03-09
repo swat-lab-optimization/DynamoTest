@@ -4,34 +4,35 @@ Date: 2023-08-10
 Description: script for processing the experimental results
 """
 
-import os
 import argparse
 import csv
-from itertools import combinations
 import json
-import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
-from typing import List
 import logging as log
-from scipy.stats import mannwhitneyu
+import os
+from itertools import combinations
 
-from matplotlib.ticker import MaxNLocator
-from common.cliffsDelta import cliffsDelta
-from sklearn.preprocessing import MinMaxScaler
-
-from sklearn.neighbors import kneighbors_graph
-from common.novelty_clustering import find_clusters, get_distance_matrix
 import igraph as ig
 import leidenalg
 import Levenshtein
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib.ticker import MaxNLocator
+from scipy.stats import mannwhitneyu
 from sklearn.manifold import TSNE
+from sklearn.neighbors import kneighbors_graph
+from sklearn.preprocessing import MinMaxScaler
+
+from dynasto.common.cliffsDelta import cliffsDelta
+from dynasto.common.novelty_clustering import find_clusters, get_distance_matrix
 
 
-def plot_clusters(tests, labels, out_root, save_name, title='t-SNE visualization of clusters'):
+def plot_clusters(
+    tests, labels, out_root, save_name, title="t-SNE visualization of clusters"
+):
     """
     Visualize clusters using t-SNE based on a precomputed distance matrix (e.g., Levenshtein distances).
-    
+
     Args:
         distance_matrix (ndarray): Precomputed (n x n) pairwise distance matrix.
         labels (ndarray): Cluster labels (e.g., from HDBSCAN or hierarchical clustering).
@@ -48,8 +49,10 @@ def plot_clusters(tests, labels, out_root, save_name, title='t-SNE visualization
     distance_matrix_norm = MinMaxScaler().fit_transform(distance_matrix)
 
     # Build color map
-    cmap = plt.colormaps.get_cmap('gist_ncar')
-    colors = [cmap(i / max(1, len(unique_labels) - 1)) for i in range(len(unique_labels))]
+    cmap = plt.colormaps.get_cmap("gist_ncar")
+    colors = [
+        cmap(i / max(1, len(unique_labels) - 1)) for i in range(len(unique_labels))
+    ]
 
     # ---- t-SNE embedding ----
     tsne = TSNE(
@@ -60,8 +63,7 @@ def plot_clusters(tests, labels, out_root, save_name, title='t-SNE visualization
         learning_rate=200,
         random_state=42,
         verbose=1,
-        init="random"
-    
+        init="random",
     )
 
     # distance_matrix is (n x n)
@@ -70,7 +72,7 @@ def plot_clusters(tests, labels, out_root, save_name, title='t-SNE visualization
     # ---- Plot ----
     plt.figure(figsize=(8, 6))
     for k, col in zip(unique_labels, colors):
-        mask = (labels == k)
+        mask = labels == k
         xy = X_tsne[mask]
         label_name = f"Cluster {k}" if k != -1 else "Noise"
         plt.scatter(
@@ -79,29 +81,30 @@ def plot_clusters(tests, labels, out_root, save_name, title='t-SNE visualization
             color=col,
             label=label_name,
             alpha=0.7,
-            edgecolors='k',
+            edgecolors="k",
             linewidths=0.3,
-            s=50
+            s=50,
         )
 
     plt.title(title)
-    plt.xlabel('t-SNE 1')
-    plt.ylabel('t-SNE 2')
-    plt.legend(fontsize=8, loc='best')
+    plt.xlabel("t-SNE 1")
+    plt.ylabel("t-SNE 2")
+    plt.legend(fontsize=8, loc="best")
     plt.tight_layout()
 
     # ---- Save ----
     os.makedirs(out_root, exist_ok=True)
     tsne_plot_path = os.path.join(out_root, save_name)
-    plt.savefig(tsne_plot_path, dpi=300, bbox_inches='tight')
+    plt.savefig(tsne_plot_path, dpi=300, bbox_inches="tight")
     plt.close()
 
     print(f"[INFO] t-SNE plot saved to: {tsne_plot_path}")
 
+
 def fast_levenshtein(seq1, seq2):
     # Convert integer sequences to bytes or strings
-    s1 = ','.join(map(str, seq1))
-    s2 = ','.join(map(str, seq2))
+    s1 = ",".join(map(str, seq1))
+    s2 = ",".join(map(str, seq2))
     return Levenshtein.distance(s1, s2)
 
 
@@ -136,21 +139,22 @@ def levenshtein_distance(seq1, seq2):
         for j in range(1, len2 + 1):
             cost = 0 if seq1[i - 1] == seq2[j - 1] else 1
             dp[i][j] = min(
-                dp[i - 1][j] + 1,      # deletion
-                dp[i][j - 1] + 1,      # insertion
-                dp[i - 1][j - 1] + cost  # substitution
+                dp[i - 1][j] + 1,  # deletion
+                dp[i][j - 1] + 1,  # insertion
+                dp[i - 1][j - 1] + cost,  # substitution
             )
 
     return dp[len1][len2]
 
-def euclidian_distance(v1:list, v2:list):
+
+def euclidian_distance(v1: list, v2: list):
     """
     Compute the Euclidean distance between two vectors.
-    
+
     Parameters:
         vec1 (array-like): First vector.
         vec2 (array-like): Second vector.
-        
+
     Returns:
         float: Euclidean distance between vec1 and vec2.
     """
@@ -165,20 +169,22 @@ def euclidian_distance(v1:list, v2:list):
     return float(np.linalg.norm(vec1 - vec2))
 
 
-def cluster_number(data: List[float]) -> int:
-    #transform to np array a list of lists
+def cluster_number(data: list[float]) -> int:
+    # transform to np array a list of lists
     failures_A = np.array(data)
 
-    eps = 0.4       # distance threshold for similarity
-    min_cluster_size = 3#5  # minimum number of points per cluster
-    min_samples = 1#5      # minimum number of samples in a neighborhood for a point to be considered a core point
-     
-    #labels_A = DBSCAN(eps=eps, min_samples=min_cluster_size).fit_predict(failures_A)
-    #labels_A = HDBSCAN(min_cluster_size=min_cluster_size, min_samples=min_samples, metric=fast_levenshtein,    cluster_selection_epsilon=1.0  ).fit(failures_A).labels_
-    #n_clusters_A = len(set(labels_A)) - (1 if -1 in labels_A else 0)
+    eps = 0.4  # distance threshold for similarity
+    min_cluster_size = 3  # 5  # minimum number of points per cluster
+    min_samples = 1  # 5      # minimum number of samples in a neighborhood for a point to be considered a core point
+
+    # labels_A = DBSCAN(eps=eps, min_samples=min_cluster_size).fit_predict(failures_A)
+    # labels_A = HDBSCAN(min_cluster_size=min_cluster_size, min_samples=min_samples, metric=fast_levenshtein,    cluster_selection_epsilon=1.0  ).fit(failures_A).labels_
+    # n_clusters_A = len(set(labels_A)) - (1 if -1 in labels_A else 0)
 
     k = 5  # number of neighbors
-    knn_graph = kneighbors_graph(failures_A, n_neighbors=k, include_self=False, metric=fast_levenshtein)
+    knn_graph = kneighbors_graph(
+        failures_A, n_neighbors=k, include_self=False, metric=fast_levenshtein
+    )
 
     # Convert to igraph format
     sources, targets = knn_graph.nonzero()
@@ -186,13 +192,13 @@ def cluster_number(data: List[float]) -> int:
 
     # Optional: weight edges by similarity (1 / distance)
     weights = knn_graph.data
-    g.es['weight'] = weights
+    g.es["weight"] = weights
 
     # Run Leiden algorithm
     partition = leidenalg.find_partition(
         g,
         leidenalg.RBConfigurationVertexPartition,  # modularity optimization
-        weights=g.es['weight']
+        weights=g.es["weight"],
     )
 
     # Get cluster labels
@@ -207,8 +213,6 @@ def cluster_number(data: List[float]) -> int:
 def get_global_clusters(failures_combined):
     """Perform global clustering across all algorithms' failures in a run."""
 
-
-
     # for mcs in [3, 5, 10]:
     #     for ms in [2, 4, 6]:
     #         clusterer = HDBSCAN(min_cluster_size=mcs, min_samples=ms)
@@ -219,19 +223,21 @@ def get_global_clusters(failures_combined):
     # clusterer = HDBSCAN(min_cluster_size=3, min_samples=3, metric='euclidean')
     # clusterer.fit(failures_combined)
     # global_labels = clusterer.labels_
-    eps = 3       # distance threshold for similarity
-    min_cluster_size = 2#  # minimum number of points per cluster
-    min_samples =2#5      # minimum number of samples in a neighborhood for a point to be considered a core point
+    eps = 3  # distance threshold for similarity
+    min_cluster_size = 2  #  # minimum number of points per cluster
+    min_samples = 2  # 5      # minimum number of samples in a neighborhood for a point to be considered a core point
 
-    #labels_A = DBSCAN(eps=eps, min_samples=min_cluster_size).fit_predict(failures_combined)
-    #cluster_selection_epsilon=0.2
+    # labels_A = DBSCAN(eps=eps, min_samples=min_cluster_size).fit_predict(failures_combined)
+    # cluster_selection_epsilon=0.2
     # labels_A = HDBSCAN(min_cluster_size=min_cluster_size, min_samples=min_samples,metric=fast_levenshtein, cluster_selection_epsilon=3.0  ).fit(failures_combined).labels_
     # n_global_clusters = len(set(labels_A)) - (1 if -1 in labels_A else 0)
     # print(f"Global clusters found: {n_global_clusters}")
     # num_noise = list(labels_A).count(-1)
     # print(f"Noise points: {num_noise}")
     k = 5  # number of neighbors
-    knn_graph = kneighbors_graph(failures_combined, n_neighbors=k, include_self=False, metric=fast_levenshtein)
+    knn_graph = kneighbors_graph(
+        failures_combined, n_neighbors=k, include_self=False, metric=fast_levenshtein
+    )
 
     # Convert to igraph format
     sources, targets = knn_graph.nonzero()
@@ -239,13 +245,13 @@ def get_global_clusters(failures_combined):
 
     # Optional: weight edges by similarity (1 / distance)
     weights = knn_graph.data
-    g.es['weight'] = weights
+    g.es["weight"] = weights
 
     # Run Leiden algorithm
     partition = leidenalg.find_partition(
         g,
         leidenalg.RBConfigurationVertexPartition,  # modularity optimization
-        weights=g.es['weight']
+        weights=g.es["weight"],
     )
 
     # Get cluster labels
@@ -254,15 +260,12 @@ def get_global_clusters(failures_combined):
     # Number of clusters
     n_clusters_A = len(set(labels_A))
 
-
     n_global_clusters = len(set(labels_A)) - (1 if -1 in labels_A else 0)
     print(f"Global clusters found: {n_global_clusters}")
     num_noise = list(labels_A).count(-1)
     print(f"Noise points: {num_noise}")
 
-
-    #params: eps 0.3, cluster_size 5
-
+    # params: eps 0.3, cluster_size 5
 
     return labels_A
 
@@ -285,7 +288,7 @@ def get_local_clusters(algo_ids, algo_id, global_labels):
     # total = clusters + unique isolated failures
     total_failures = len(covered_clusters) + unique_noise
 
-    return total_failures, len(covered_clusters) 
+    return total_failures, len(covered_clusters)
 
 
 def setup_logging(log_to, debug):
@@ -338,10 +341,18 @@ def parse_arguments():
         required=True,
     )
     parser.add_argument(
-        "--plot-name", help="Name to add to the plots", required=False, default="", type=str
+        "--plot-name",
+        help="Name to add to the plots",
+        required=False,
+        default="",
+        type=str,
     )
     parser.add_argument(
-        "--problem", help="Type of the problem to analyze. Available options: [ads, uav]", required=False, default="ads", type=str
+        "--problem",
+        help="Type of the problem to analyze. Available options: [ads, uav]",
+        required=False,
+        default="ads",
+        type=str,
     )
     in_arguments = parser.parse_args()
     return in_arguments
@@ -452,7 +463,7 @@ def build_cliff_data(
             cliffsDelta(fitness_list[pair[0]], fitness_list[pair[1]])[0], 3
         )
         delta_name = cliffsDelta(fitness_list[pair[0]], fitness_list[pair[1]])[1]
-        pair_values.append(str(delta_value) + str(", ") + delta_name)
+        pair_values.append(str(delta_value) + ", " + delta_name)
         for i, p in enumerate(pair_values):
             if not (isinstance(p, str)):
                 pair_values[i] = round(pair_values[i], 3)
@@ -460,7 +471,7 @@ def build_cliff_data(
 
     log.info("Writing cliff delta data to file: " + plot_name + "_res_p_value.csv")
 
-    save_dir = save_dir# + "_" + plot_name
+    save_dir = save_dir  # + "_" + plot_name
     if not os.path.exists(save_dir):
         os.makedirs(save_dir, exist_ok=True)
 
@@ -488,7 +499,7 @@ def build_cliff_data(
             cliffsDelta(diversity_list[pair[0]], diversity_list[pair[1]])[0], 3
         )
         delta_name = cliffsDelta(diversity_list[pair[0]], diversity_list[pair[1]])[1]
-        pair_values.append(str(delta_value) + str(", ") + delta_name)
+        pair_values.append(str(delta_value) + ", " + delta_name)
         for i, p in enumerate(pair_values):
             if not (isinstance(p, str)):
                 pair_values[i] = round(pair_values[i], 3)
@@ -544,7 +555,9 @@ def plot_convergence(dfs, stats_names, plot_name, base_path="stats"):
         plt.legend()
 
     log.info("Saving plot to " + plot_name + "_convergence.png")
-    plt.savefig(os.path.join(base_path, plot_name + "_convergence.png"), bbox_inches="tight")
+    plt.savefig(
+        os.path.join(base_path, plot_name + "_convergence.png"), bbox_inches="tight"
+    )
     plt.close()
 
 
@@ -572,11 +585,13 @@ def calculate_test_list_novelty(
             current1 = test_list[i]  # res.history[gen].pop.get("X")[i[0]]
             current2 = test_list[j]  # res.history[gen].pop.get("X")[i[1]]
 
-            nov = fast_levenshtein(current1, current2)#levenshtein_distance(current1, current2)#euclidian_distance(current1, current2)/4.9 # normalize
+            nov = fast_levenshtein(
+                current1, current2
+            )  # levenshtein_distance(current1, current2)#euclidian_distance(current1, current2)/4.9 # normalize
             # print("Novelty", nov)
             local_novelty.append(nov)
         if local_novelty:
-            #all_novelty.append(sum(local_novelty) / len(local_novelty))
+            # all_novelty.append(sum(local_novelty) / len(local_novelty))
             all_novelty.append(min(local_novelty))  # min distance to others
 
     return sum(all_novelty) / len(all_novelty) if all_novelty else 0.0
@@ -617,7 +632,7 @@ def plot_boxplot(
 
     plt.subplots_adjust(bottom=0.15, left=0.16)
 
-    save_dir = save_dir #+ "_" + plot_name
+    save_dir = save_dir  # + "_" + plot_name
     if not os.path.exists(save_dir):
         os.makedirs(save_dir, exist_ok=True)
 
@@ -625,6 +640,7 @@ def plot_boxplot(
         os.path.join(save_dir, plot_name + "_" + name + ".png"), bbox_inches="tight"
     )
     plt.close()
+
 
 def analyse(stats_path, stats_names, plot_name):
     """
@@ -650,7 +666,7 @@ def analyse(stats_path, stats_names, plot_name):
         convergence_paths.append(os.path.join(path, file_name))
         fail_paths.append(os.path.join(path, fails_file_name))
         failures_path.append(os.path.join(path, failures))
-        
+
     fail_lists = []
     diversity_lists = []
     all_cluster_lists = []
@@ -658,9 +674,9 @@ def analyse(stats_path, stats_names, plot_name):
     h_all_cluster_lists = []
     for i in range(len(fail_paths)):
         print(f"Fail path {fail_paths[i]}")
-        with open(fail_paths[i], "r", encoding="utf-8") as f:
+        with open(fail_paths[i], encoding="utf-8") as f:
             data = json.load(f)
-        with open(failures_path[i], "r", encoding="utf-8") as f:
+        with open(failures_path[i], encoding="utf-8") as f:
             failure_data = json.load(f)
         fail_list = []
         div_list = []
@@ -669,34 +685,37 @@ def analyse(stats_path, stats_names, plot_name):
         h_clust_list = []
         for run in data:
             print(f"{run}")
-            
+
             fail_list.append(data[run])
             all_failure_list.append(failure_data[run])
             diversity = calculate_test_list_novelty(
-                test_list=failure_data[run],  
+                test_list=failure_data[run],
             )
 
-            num_clusters = find_clusters(failure_data[run], dist_func=fast_levenshtein, threshold=4)
-           # print("Diversity", diversity)
+            num_clusters = find_clusters(
+                failure_data[run], dist_func=fast_levenshtein, threshold=4
+            )
+            # print("Diversity", diversity)
             div_list.append(diversity)
             n_clusters, labels = cluster_number(failure_data[run])
             clust_list.append(n_clusters)
             h_clust_list.append(num_clusters)
-            #clust_list.append(num_clusters)
-        plot_clusters(failure_data[list(data.keys())[-1]], labels, base_path, f"leiden_local_{stats_names[i]}.png")
-       # cluster_lists.append(clust_list)
+            # clust_list.append(num_clusters)
+        plot_clusters(
+            failure_data[list(data.keys())[-1]],
+            labels,
+            base_path,
+            f"leiden_local_{stats_names[i]}.png",
+        )
+        # cluster_lists.append(clust_list)
         diversity_lists.append(div_list)
         fail_lists.append(fail_list)
         all_failure_lists.append(all_failure_list)
         all_cluster_lists.append(clust_list)
         h_all_cluster_lists.append(h_clust_list)
 
-
-
-
-
     num_algorithms = len(fail_lists)
-    num_runs = 8#len(fail_lists[0])
+    num_runs = 8  # len(fail_lists[0])
 
     # initialize cluster lists for each algorithm
     cluster_lists = [[] for _ in range(num_algorithms)]
@@ -715,24 +734,25 @@ def analyse(stats_path, stats_names, plot_name):
 
         # Combine all algorithms' failures into one array
         failures_combined = np.vstack(run_failures)
-        algo_ids = np.concatenate([
-            np.full(len(fails), a) for a, fails in enumerate(run_failures)
-        ])
+        algo_ids = np.concatenate(
+            [np.full(len(fails), a) for a, fails in enumerate(run_failures)]
+        )
 
         # Global clustering (shared failure space for this run)
 
         global_labels = get_global_clusters(failures_combined)
-        plot_clusters(failures_combined, global_labels, base_path, f"leiden_glob_{run_idx}.png")
+        plot_clusters(
+            failures_combined, global_labels, base_path, f"leiden_glob_{run_idx}.png"
+        )
 
         # Count how many clusters each algorithm covers
         for algo_id in range(num_algorithms):
-            #print(f"Algo id {algo_id}")
+            # print(f"Algo id {algo_id}")
             n_local, n_global = get_local_clusters(algo_ids, algo_id, global_labels)
             cluster_lists[algo_id].append(n_local)
             cluster_lists_global[algo_id].append(n_global)
             # print(f"Local clusters {n_local}")
             # print(f"Global clusters {n_global}")
-
 
     plot_boxplot(
         fail_lists,
@@ -746,7 +766,6 @@ def analyse(stats_path, stats_names, plot_name):
         stats_names,
         "Diversity",
         plot_name=plot_name,
-       
         save_dir=base_path,
     )
     plot_boxplot(
@@ -763,7 +782,7 @@ def analyse(stats_path, stats_names, plot_name):
         plot_name=plot_name,
         save_dir=base_path,
     )
-        
+
     plot_boxplot(
         cluster_lists,
         stats_names,
@@ -782,21 +801,18 @@ def analyse(stats_path, stats_names, plot_name):
         fail_lists, diversity_lists, stats_names, plot_name, save_dir=base_path
     )
 
-
-    #if conv_flag:
+    # if conv_flag:
     dfs = {}
     for i, file in enumerate(convergence_paths):
-        with open(file, "r", encoding="utf-8") as f:
+        with open(file, encoding="utf-8") as f:
             data = json.load(f)
         dfs[i] = pd.DataFrame(data=data)
         dfs[i]["mean"] = dfs[i].mean(axis=1)
         dfs[i]["std"] = dfs[i].std(axis=1)
-        #take only 2000
-        #dfs[i] = dfs[i].iloc[:2000]
+        # take only 2000
+        # dfs[i] = dfs[i].iloc[:2000]
 
-    plot_convergence(dfs, stats_names, plot_name+"_fitness", base_path=f"{base_path}")
-
-
+    plot_convergence(dfs, stats_names, plot_name + "_fitness", base_path=f"{base_path}")
 
 
 if __name__ == "__main__":
@@ -809,9 +825,9 @@ if __name__ == "__main__":
 
     analyse(stats_path, stats_names, plot_name)
 
-'''
+"""
 python compare.py --stats-path stats\final\rl_2025-08-10-2005-random_baseline_calibrated stats\final\rl_2025-08-10-2005-cmab_baseline_calibrated stats\final\rl_2025-08-10-2005-dqn_baseline_calibrated stats\final\rl_2025-08-11-2000-dqn_matteo_new_threshold  --stats-names rl 
 --plot-name "results_2k"
 
 
-'''
+"""

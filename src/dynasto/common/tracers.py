@@ -8,10 +8,10 @@ metrics stepwise or over entire traces.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Tuple
+
+import numpy as np
 import rtamt
 from highway_env.vehicle.behavior import ControlledVehicle
-import numpy as np
 
 
 class AbstractSignalTracer(ABC):
@@ -110,8 +110,8 @@ class AbstractSignalTracer(ABC):
         self.spec.parse()
 
     def evaluate2(
-        self, input_trace: Dict[str, List[Tuple[float, float]]]
-    ) -> List[Tuple[float, float]]:
+        self, input_trace: dict[str, list[tuple[float, float]]]
+    ) -> list[tuple[float, float]]:
         """Evaluate the specification over an entire trace at once.
 
         Args:
@@ -129,7 +129,7 @@ class AbstractSignalTracer(ABC):
 
         return self.spec.evaluate(input_trace)
 
-    def evaluate(self, input_trace: Dict[str, List[Tuple[float, float]]]) -> float:
+    def evaluate(self, input_trace: dict[str, list[tuple[float, float]]]) -> float:
         """Evaluate the specification by iterating over a provided trace.
 
         This helper feeds each time step to the monitor and returns the maximum
@@ -167,7 +167,7 @@ class AbstractSignalTracer(ABC):
 
         return rob
 
-    def evaluate_step(self, input_trace: Dict[str, List[float]]) -> float:
+    def evaluate_step(self, input_trace: dict[str, list[float]]) -> float:
         """Evaluate the specification for the latest time step.
 
         Feeds the most recent sample from `input_trace` to the monitor and
@@ -232,11 +232,11 @@ class AbstractSignalTracer(ABC):
             self.input_trace["adv_heading"] = [float(adv_veh.heading)]
         else:
             self.input_trace["adv_x"].append(float(adv_veh.position[0]))
-            self.input_trace["adv_lane"].append((round(adv_veh.position[1])))
+            self.input_trace["adv_lane"].append(round(adv_veh.position[1]))
             self.input_trace["ego_x"].append(float(ego_veh.position[0]))
-            self.input_trace["ego_lane"].append((round(ego_veh.position[1])))
-            self.input_trace["ego_speed"].append((ego_veh.speed))
-            self.input_trace["adv_speed"].append((adv_veh.speed))
+            self.input_trace["ego_lane"].append(round(ego_veh.position[1]))
+            self.input_trace["ego_speed"].append(ego_veh.speed)
+            self.input_trace["adv_speed"].append(adv_veh.speed)
             self.input_trace["ego_lane_id"].append(int(ego_veh.lane_index[2]))
             self.input_trace["adv_lane_id"].append(int(adv_veh.lane_index[2]))
             self.input_trace["adv_heading"].append(float(adv_veh.heading))

@@ -1,7 +1,5 @@
-
-import os
-
 import json
+import os
 
 if __name__ == "__main__":
     folder = "stats\\RQ\\RQ2\\uc2"
@@ -26,7 +24,6 @@ if __name__ == "__main__":
             timesteps = [int(k) for k in data.keys()]
             total_failures = [v["failure_num"] for v in data.values()]
             for i, timestep in enumerate(timesteps):
-
                 convergence_data[res_folder][timestep] = total_failures[i]
             fail_num = total_failures[-1]
             fail_data[res_folder] = fail_num
