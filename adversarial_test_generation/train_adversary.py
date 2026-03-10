@@ -34,11 +34,11 @@ register(
 cur_date = datetime.now().strftime("%Y-%m-%d")
 
 
-EPISODES = 4005
+EPISODES = 100
 RENDER = False
 if __name__ == "__main__":
-    runs = 10
-    algo = "ga"
+    runs = 3
+    algo = "dqn"
     all_tests = {}
     ego_type = "use_case_1"
     for run in range(0, runs):

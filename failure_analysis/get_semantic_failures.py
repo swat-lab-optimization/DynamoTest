@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 
@@ -42,11 +43,14 @@ def symbolic_event_vector(
 
 
 if __name__ == "__main__":
-    # @result_path = "stats\\final_22_oct_uc1_temp\\rl_2025-10-22-4005-dqn_baseline_uc1_ga_200_&rl"
-    folder = "stats\\RQ\\RQ1\\uc2"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--results-folder", type=str, required=True, help="Path to the folder containing the results of multiple runs.")
+    folder = parser.parse_args().results_folder
     for file in os.listdir(folder):
         print(f"Processing {file}...")
         result_path = os.path.join(folder, file)
+        if "plot" in file:
+            continue
         print(result_path)
         convergence_data = {}
         fail_data = {}

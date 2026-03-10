@@ -20,7 +20,7 @@ class RenderCallback(BaseCallback):
         return True
 
 
-EPISODES = 4000
+EPISODES = 40
 if __name__ == "__main__":
     # Create the environment
     env = gym.make("highway-fast-v0", render_mode="rgb_array", config=ego_config)
